@@ -6,3 +6,63 @@ ENV/
 **/.venv/
 **/venv/
 **/env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Secrets / local env
+.env
+.env.*
+!.env.example
+dct/.env.waves_dct
+
+# Benchmark run outputs (regenerate locally; do not match wmbench/metrics source code)
+results/
+**/work/
+**/work/**/metrics/
+**/work/**/scores/
+**/work/**/attacked/
+**/work/**/watermarked/
+results_raw.csv
+results_leaderboard.csv
+normalization_anchors.json
+missing_components.txt
+evaluate_crash.txt
+truncated_attacked_removed.log
+attack_errors.log
+
+# DCT experiment artifacts (keep source, ignore generated outputs)
+dct/outputs/
+dct/outputs_*/
+dct/__pycache__/
+
+# DWT generated results
+dwt/results/
+
+# Large downloaded weights (re-fetch via metrics code)
+*.pt
+inception-2015-12-05.pt
+
+# Logs / scratch
+debug-*.log
+*.log
+dct/Untitled
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Upstream WAVES tree (separate repo; wmbench is self-contained)
+waves/
