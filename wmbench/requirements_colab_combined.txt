@@ -1,0 +1,28 @@
+# Combined requirements for wmbench + dct on Google Colab
+# dct/requirements.txt
+numpy
+scipy
+pillow
+matplotlib
+
+# wmbench core
+tqdm
+click
+scikit-image
+scikit-learn
+pandas
+
+# watermark/attack dependencies
+diffusers
+transformers
+accelerate
+huggingface-hub
+compressai
+
+# quality metrics
+lpips
+clean-fid
+open-clip-torch
+
+# utility
+pyarrow

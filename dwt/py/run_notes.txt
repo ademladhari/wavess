@@ -1,0 +1,1 @@
+Notebook run stores outputs in pictures/ and results/.

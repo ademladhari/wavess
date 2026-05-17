@@ -1,0 +1,848 @@
+Wavelet transform based watermark for
+digital images
+Xiang-Gen Xia, Charles G. Boncelet and Gonzalo R. Arce
+Department of Electrical and Computer Engineering, University of Delaware,
+Newark, DE 19716
+{xxia, boncelet, arce} @ee.udel.edu
+Abstract: In this paper, we introduce a new multiresolution watermarking method for digital images. The method is based on the discrete wavelet transform (DWT). Pseudo-random codes are added to the
+large coefficients at the high and middle frequency bands of the DWT
+of an image. It is shown that this method is more robust to proposed
+methods to some common image distortions, such as the wavelet transform based image compression, image rescaling/stretching and image
+halftoning. Moreover, the method is hierarchical.
+
+c 1998 Optical Society of America
+OCIS codes: (100.0100) Image processing;(110.2960) Image analysis
+References
+1. R. G. van Schyndel, A. Z. Tirkel, and C. F. Osborne, “A digital watermark,” Proc. ICIP’94, 2,
+86-90 (1994).
+2. I. J. Cox, J. Kilian, T. Leighton, and T. Shamoon, “Secure spread spectrum watermarking for
+images, audio and video,” Proc. ICIP’96, 3, 243-246 (1996).
+3. J. Zhao and E. Koch, “Embedding robust labels into images for copyright protection,” Proceedings of the International Congress on Intellectual Property Rights for Specialized Information,
+Knowledge and New Technologies, Vienna, Austria, August 21-25, 242-251 (1995).
+4. R. B. Wolfgang and E. J. Delp, “A watermark for digital images,” Proc. ICIP’96, 3, 219-222
+(1996).
+5. I. Pitas, “A method for signature casting on digital images,” Proc. ICIP’96, 3, 215-218 (1996).
+6. N. Nikolaidis and I. Pitas, “Copyright protection of images using robust digital signatures,”
+Proceedings of ICASSP’96, Atlanta, Georgia, May, 2168-2171 (1996).
+7. M. D. Swanson, B. Zhu, and A. H. Tewfik, “Transparent robust image watermarking,” Proc.
+ICIP’96, 3, 211-214 (1996).
+8. M. Schneider and S.-F. Chang, “A robust content based digital signature for image authentication,” Proc. ICIP’96, 3, 227-230 (1996).
+9. S. Mallat, “Multiresolution approximations and wavelet orthonormal bases of L2(R),” Trans.
+Amer. Math. Soc., 315, 69-87 (1989).
+10. I. Daubechies, “Orthonormal bases of compactly supported wavelets,” Comm. on Pure and Appl.
+Math., 41, 909-996 (1988).
+11. O. Rioul and M. Vetterli, “Wavelets and signal processing,” IEEE Signal Processing Magazine,
+14-38, (1991).
+12. I. Daubechies, Ten Lectures on Wavelets, (SIAM, Philadelphia, 1992).
+13. P. P. Vaidyanathan, Multirate Systems and Filter Banks, (Prentice Hall, Englewood Cliffs, NJ,
+1993).
+14. M. Vetterli and J. Kova˘cevi´c, Wavelets and Subband Coding, (Prentice Hall, Englewood Cliffs,
+NJ, 1995).
+15. G. Strang and T. Q. Nguyen, Wavelets and Filter Banks, (Wellesley-Cambridge Press, Cambridge, 1996).
+16. J. Shapiro, “Embedded image coding using zerotrees of wavelet coefficients,” IEEE Trans. on
+Signal Processing, 41, 3445-3462 (1993).
+17. R. Ulichney, Digital Halftoning, (MIT Press, Massachusetts, 1987).
+18. S. Craver, N. Memon, B-L Yeo, and M. M. Yeung, “Resolving rightful ownerships with invisible
+watermarking techniques: limitations, attacks, and implications,” IBM Research Report (RC
+20755), March 1997.
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 497
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+1. Introduction
+With the rapid development of the current information technology, electronic publishing,
+such as the distribution of digitized images/videos, is becoming more and more popular.
+An important issue for electronic publishing is copyright protection. Watermarking is
+one of the current copyright protection methods that have recently received considerable
+attention. See, for example, [1-8, 18]. Basically, “invisible” watermarking for digital
+images consists of signing an image with a signature or copyright message such that
+the message is secretly embedded in the image and there is negligible visible difference
+between the original and the signed images.
+There are two common methods of watermarking: the frequency domain and
+the spatial domain watermarks, for example [1-8, 18]. In this paper, we focus on frequency domain watermarks. Recent frequency domain watermarking methods are based
+on the discrete cosine transform (DCT), where pseudo-random sequences, such as Msequences, are added to the DCT coefficients at the middle frequencies as signatures
+[2-3]. This approach, of course, matches the current image/video compression standards
+well, such as JPEG, MPEG1-2, etc. It is likely that the wavelet image/video coding,
+such as embedded zero-tree wavelet (EZW) coding, will be included in the up-coming
+image/video compression standards, such as JPEG2000 and MPEG4. Therefore, it is
+important to study watermarking methods in the wavelet transform domain.
+In this paper, we propose a wavelet transform based watermarking method by
+adding pseudo-random codes to the large coefficients at the high and middle frequency
+bands of the discrete wavelet transform of an image. The basic idea is the same as the
+spread spectrum watermarking idea proposed by Cox et. al. in [2]. There are, however,
+three advantages to the approach in the wavelet transform domain. The first advantage
+is that the watermarking method has multiresolution characteristics and is hierarchical.
+In the case when the received image is not distorted significantly, the cross correlations
+with the whole size of the image may not be necessary, and therefore much of the
+computational load can be saved. The second advantage lies in the following argument.
+It is usually true that the human eyes are not sensitive to the small changes in edges and
+textures of an image but are very sensitive to the small changes in the smooth parts of
+an image. With the DWT, the edges and textures are usually well confined to the high
+frequency subands, such as HH, LH, HL etc. Large coefficients in these bands usually
+indicate edges in an image. Therefore, adding watermarks to these large coefficients
+is difficult for the human eyes to perceive. The third advantage is that this approach
+matches the emerging image/video compression standards. Our numerical results show
+that the watermarking method we propose is very robust to wavelet transform based
+image compressions, such as the embedded zero-tree wavelet (EZW) image compression
+scheme, and as well as to other common image distortions, such as additive noise,
+rescaling/stretching, and halftoning. The intuitive reason for the advantage of the DWT
+approach over the DCT approach in rescaling is as follows. The DCT coefficients for the
+rescaled image are shifted in two directions from the ones for the original image, which
+degrades the correlation detection for the watermark. Since the DWT are localized
+not only in the time but also in the frequency domain [9-15], the degradation for the
+correlation detection in the DWT domain is not as serious as the one in the DCT
+domain.
+Another difference in this paper with the approach proposed by Cox et. al. in
+[2] is the watermark detection using the correlation measure. The watermark detection
+method in [2] is to take the inner product (the correlation at the τ = 0 offset) of the
+watermark and the difference in the DCT domain of the watermarked image and the
+original image. Even though both the difference and the watermark are normalized, the
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 498
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+inner product may be small if the difference significantly differs from the watermark
+although there may be a watermark in the image. In this case, it may fail to detect
+the watermark. In this paper, we propose to take the correlation at all offsets τ of
+the watermark and the difference in the DWT domain the watermarked image and
+the original image in different resolutions. The advantage of this new approach is that,
+although the peak correlation value may not be large, it is much larger than all other
+correlation values at other offsets if there is a watermark in the image. This ensures
+the detection of the watermark even though there is a significant distortion in the
+watermarked image. The correlation detection method in this paper is a relative measure
+rather than an absolute measure as in [2].
+This paper is organized as follows. In Section 2, we briefly review some basics
+on discrete wavelet transforms (DWT). In Section 3, we propose our new watermarking
+method based on the DWT. In Section 4, we implement some numerical experiments in
+terms of several different image distortions, such as, additive noise, rescaling/stretching,
+image compression with EZW coding and halftoning.
+2. Discrete Wavelet Transform (DWT): A Brief Review
+The wavelet transform has been extensively studied in the last decade, see for example [9-
+16]. Many applications, such as compression, detection, and communications, of wavelet
+transforms have been found. There are many excellent tutorial books and papers on
+these topics. Here, we introduce the necessary concepts of the DWT for the purposes of
+this paper. For more details, see [9-15].
+The basic idea in the DWT for a one dimensional signal is the following. A
+signal is split into two parts, usually high frequencies and low frequencies. The edge
+components of the signal are largely confined to the high frequency part. The low frequency part is split again into two parts of high and low frequencies. This process is
+continued an arbitrary number of times, which is usually determined by the application
+at hand. Furthermore, from these DWT coefficients, the original signal can be reconstructed. This reconstruction process is called the inverse DWT (IDWT). The DWT
+and IDWT can be mathematically stated as follows.
+Let
+H(ω) = X
+k
+hke−jkω, and G(ω) = X
+k
+gke−jkω.
+be a lowpass and a highpass filter, respectively, which satisfy a certain condition for
+reconstruction to be stated later. A signal, x[n] can be decomposed recursively as
+cj−1,k = X
+n
+hn−2kcj,n (1)
+dj−1,k = X
+n
+gn−2kcj,n (2)
+for j = J +1, J, ..., J0 where cJ+1,k = x[k], k ∈ Z, J +1 is the high resolution level index,
+and J0 is the low resolution level index. The coefficients cJ0,k, dJ0,k, dJ0+1,k, ..., dJ,k are
+called the DWT of signal x[n], where cJ0,k is the lowest resolution part of x[n] and dj,k
+are the details of x[n] at various bands of frequencies. Furthermore, the signal x[n] can
+be reconstructed from its DWT coefficients recursively
+cj,n = X
+k
+hn−2kcj−1,k +X
+k
+gn−2kdj−1,k. (3)
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 499
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+H(w) 2
+x[n]
+G(w) 2
+H(w) 2
+G(w) 2
+...
+H(w) 2
+G(w) 2
+*
+*
+*
+*
+*
+*
+dJ
+dJ−1
+dJ0
+cJ0
+dJ0
+cJ0
+2 H(w)
++
+2 G(w)
+2 H(w)
++
+2 G(w)
+2 H(w)
++
+2 G(w)
+...
+dJ +1 0
+cJ +1 0 cJ
+dJ
+x[n]
+decomposition
+reconstruction
+Figure 1. DWT for one dimensional signals.
+x[m,n]
+H(w) 2 ... *
+G(w) 2 *
+n
+n
+n
+n
+H(w) 2 *
+G(w) 2 *
+n
+n
+n
+n
+H(w) 2 *
+m m
+G(w) 2 *
+m m
+Figure 2. DWT for two dimensional images.
+The above reconstruction is called the IDWT of x[n]. To ensure the above
+IDWT and DWT relationship, the following orthogonality condition on the filters H(ω)
+and G(ω) is needed:
+|H(ω)|
+2 + |G(ω)|
+2 = 1.
+An example of such H(ω) and G(ω) is given by
+H(ω) = 1
+2 +
+1
+2
+e−jω, and G(ω) = 1
+2 − 1
+2
+e−jω,
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 500
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+which are known as the Haar wavelet filters.
+The above DWT and IDWT for a one dimensional signal x[n] can be also described in the form of two channel tree-structured filterbanks as shown in Fig. 1. The
+DWT and IDWT for two dimensional images x[m, n] can be similarly defined by implementing the one dimensional DWT and IDWT for each dimension m and n separately:
+DWTn[DWTm[x[m, n]]], which is shown in Fig. 2. An image can be decomposed into
+a pyramid structure, shown in Fig. 3, with various band information: such as low-low
+frequency band, low-high frequency band, high-high frequency band etc. An example
+of such decomposition with two levels is shown in Fig. 4, where the edges appear in all
+bands except in the lowest frequency band, i.e., the corner part at the left and top.
+HH
+HL
+LH
+LH HH
+HL
+LH HH
+LL HL
+1 1
+1
+2 2
+2
+3 3
+3 3
+Figure 3. DWT pyramid decomposition of an image.
+DWT
+Figure 4. Example of a DWT pyramid decomposition.
+3. Watermarking in the DWT Domain
+Watermarking in the DWT domain is composed of two parts: encoding and decoding.
+In the encoding part, we first decompose an image into several bands with a pyramid
+structure as shown in Figs. 3-4 and then add a pseudo-random sequence (Gaussian
+noise) to the largest coefficients which are not located in the lowest resolution, i.e., the
+corner at the left and top, as follows. Let y[m, n] denote the DWT coefficients, which
+are not located at the lowest frequency band, of an image x[n, m]. We add a Gaussian
+noise sequence N[m, n] with mean 0 and variance 1 to y[m, n]:
+y˜[m, n] = y[m, n] + αy2[m, n]N[m, n], (4)
+where α is a parameter to control the level of the watermark, the square indicates the
+amplification of the large DWT coeffcients. We do not change the DWT coefficients at
+the lowest resolution. Then, we take the two dimensional IDWT of the modified DWT
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 501
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+coefficients ˜y and the unchanged DWT coefficients at the lowest resolution. Let ˜x[m, n]
+denote the IDWT coefficients. For the resultant image to have the same dynamic range
+as the original image, it is modified as
+xˆ[m, n] = min(max(x[m, n]), max{x˜[m, n], min(x[m, n])}). (5)
+The operation in (5) is to make the two dimensional data ˜x[m, n] be the same dynamic
+range as the original image x[m, n]. The resultant image ˆx[m, n] is the watermarked
+image of x[m, n]. The encoding part is illustrated in Fig. 5(a).
+DWT
+Inverse
+ DWT
+Insert
+watermarks
+Insert
+watermarks
+(a): Encoding
+, Gaussian
+ noise
+, Gaussian
+ noise
+DWT
+Original
+image
+Watermarked
+image
+Watermarked
+image
+Original
+image
+DWT
+Cross
+Corre.
+Original
+watermark
+Is
+there
+a peak?
+Yes
+Stop
+Cross
+Corre.
+Original
+watermark
+Is
+there
+a peak?
+Yes
+Stop
+No
+No
+Continue
+(b): Decoding
+Figure 5. Watermarking in the DWT domain.
+The decoding method we propose is hierarchical and described as follows. We
+first decompose a received image and the original image (it is assumed that the original
+image is known) with the DWT into four bands, i.e., low-low (LL1) band, low-high
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 502
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+(LH1) band, high-low (HL1) band, and high-high (HH1) band, respectively. We then
+compare the signature added in the HH1 band and the difference of the DWT coefficients in HH1 bands of the received and the original images by calculating their cross
+correlations. If there is a peak in the cross correlations, the signature is called detected.
+Otherwise, compare the signature added in the HH1 and LH1 bands with the difference
+of the DWT coefficients in the HH1 and LH1 bands, respectively. If there is a peak, the
+signature is detected. Otherwise, we consider the signature added in the HL1, LH1, and
+HH1 bands. If there is still no peak in the cross correlations, we continue to decompose
+the original and the received signals in the LL1 band into four additional subbands LL2,
+LH2, HL2 and HH2 and so on until a peak appears in the cross correlations. Otherwise,
+the signature can not be detected. The decoding method is illustrated in Fig. 5(b).
+4. Numerical Examples
+We implement two watermarking methods: one is using the DCT approach proposed
+by Cox el. al. in [2] and the other is using the DWT approach proposed in this paper.
+In the DWT approach, the Haar DWT is used. Two step DWT is implemented and
+images are decomposed into 7 subbands. Watermarks, Gaussian noise, are added into
+all 6 subbands but not in the lowest subband (the lowest frequency components). In
+the DCT approach, watermarks (Gaussian noise) are added to all the DCT coefficients.
+The levels of watermarks in the DWT and DCT approaches are the same, i.e., the total
+energies of the watermark values in these two approaches are the same. It should be
+noted that we have also implemented the DCT watermarking method when the pseudorandom sequence is added to the DCT values at the same positions as the ones in the
+above DWT approach, i.e., the middle frequencies. We found that the performance is
+not as good as the one by adding watermarks in all the frequencies in the DCT domain.
+Two images with size 512 × 512, “peppers” and “car,” are tested. Fig. 6(a)
+shows the original “peppers” image. Fig. 6(b) shows the watermarked image with the
+DWT approach and Fig. 7(a) shows the watermarked image with the DCT approach.
+Both watermarked images are indistinguishable from the original. A similar property
+holds for the second test image “car,” whose original image is shown in Fig. 8(b).
+The first distortion against which we test our algorithm with is additive noise.
+Two noisy images are shown in Fig. 7(b) and Fig. 8(a), respectively. When the variance
+of the additive noise is not too large, such as the one shown in Fig. 7(b), the signature
+can be detected only using the information in the HH1 band with the DWT approach,
+where the cross correlations are shown in Fig. 9(a) and a peak can be clearly seen.
+When the variance of the additive noise is large, such as the one shown in Fig. 8(a),
+the HH1 band information is not good enough with the DWT approach, where the
+cross correlations are shown in Fig. 9(b) and no clear peak can be seen. However, the
+signature can be detected by using the information in the HH1 and LH1 bands with
+the DWT approach, where the cross correlations are shown in Fig. 9(d) and a peak
+can be clearly seen. For the second noisy image, we have also implemented the DCT
+approach. In this case, the signature with the DCT approach can not be detected, where
+the correlations are shown in Fig. 9(c) and no clear peak can be seen. Similar results
+hold for the “car” image and the correlations are shown in Fig. 10.
+The second “test” distortion is rescaling/stretching for “peppers” and “car”
+images. three types of rescaling/stretchings are implemented. In the first two implementations, the rescaled/stretched images are rescaled back to the same size of the
+original image using interpolations, where 25% reduction/enlargement is used. In the
+third implementation, the stretched images are simply cut back to the original size,
+where 1% and 2% stretching is used.
+In the rescaling, an image, x, is reduced to 3/4 of the original size. The method of
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 503
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+the rescaling is from the MATLAB function called “imresize.” as imresize(x, 1-1/4,
+’method’) where ’method’ indicates one of the methods in the interpolations between
+pixels: piecewise constant, bilinear spline, and cubic spline. With the received smaller
+size image, for the watermark detection we extend it to the normal size, i.e., 512 × 512,
+by using the same Matlab function “imresize” as imresize(y, 1+1/3, ’method’),
+where ’method’ is also one of the above interpolation methods. In this experiment, we
+implemented two different interpolation methods in imresize in the rescaling distortion: the piecewise constant method and the cubic spline method. In the detection, we
+alway use the cubic spline as imresize(y, 1+1/3, ’bicubic’). Similar results also
+hold for other combinations of these interpolation methods. Fig. 11 illustrate the detection results for the “peppers” image: Fig. 11(a),(c) show the cross correlations with
+the DWT approach while Fig. 11(b),(d) show the cross correlations with the DCT approach. In Fig. 11(a), (b), the rescaling method is imresize(x,1-1/4,’nearest’), i.e.,
+the piecewise constant interpolation is used. In Fig. 11(c),(d), the rescaling method is
+imresize(x,1-1/4,’bicubic’), i.e., the cubic spline interpolation is used. One can see
+the better performance of the DWT approach over the DCT approach. Similar results
+hold for the “car” image and are shown in Fig. 12.
+When, in the above rescaling experiment, the size of an image is first reduced
+and then extended in the detection, in the stretching, an image is first extended and
+then reduced in the detection. The same Matlab function imresize as in the rescaling
+is used. In the stretching experiment, an image is extended by 1/4 of the original size,
+i.e., the MATLAB function imresize(x, 1+1/4, ’method’), is used, where ’method’
+is the same as in the rescaling. In the detection, the received image is reduced by 1/5
+to the original size, i.e., the Matlab function imresize(y, 1-1/5, ’method’) is used.
+The rest is similar to the one in the rescaling. Figs. 13 and 14 show the correlation
+properties for the “peppers” and the “car” images, respectively.
+In the third implementation of rescaling/stretching, an image is first stretched
+by 1% and 2% using the MATLAB function imresize(y, 1+1/100, ’method’) and
+imresize(y, 1+2/100, ’method’), respectively. The stretched image is then cut back
+to the original size. Two images “peppers” and “car” are tested. Figs. 15-16 shows the
+correlation properties for the “peppers” and the “car” images, respectively, where (a)
+and (b) are for the 1% stretching, and (c) and (d) are for the 2% stretching.
+The third “test” distortion is image compression. Two watermarked images with
+the DWT and DCT approaches shown in Fig. 6(b) and Fig. 7(a) are compressed by using the EZW coding algorithm. The compression ratio is chosen as 64, i.e., 0.125bpp.
+With these two compressed images, the correlations are shown in Fig. 17 (a) and (b),
+where a peak in the middle can be clearly seen in Fig. 17(a) with the DWT approach,
+but no clear peaks can be seen in Fig. 17(b) with the DCT approach. This is not very
+surprising because the compression scheme is not suitable for the DCT approach. It
+should be noticed that the wavelet filters in the EZW compression are the commonly
+used Daubechies “9/7” biorthogonal wavelet filters while the wavelet filters in the watermarking are the simpliest Haar wavelet filters mentioned in Section 2.
+The last “test” distortion is halftoning. The two watermarked images in Fig.
+6(b) and Fig. 7(a) are both halftoned by using the following standard method. Let
+x[m, n] be an image with 8 bit levels. To halftone it, we do the nonuniform thresholding
+through the Bayer’s dither matrix T [17]:
+T = (Tj,k)4×4 = 16
+
+
+11 7 10 6
+3 15 2 14
+9 5 12 8
+1 13 4 16
+
+
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 504
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+in the following way. Compare each disjoint 4 × 4 blocks in the image x[m, n]. If x[m ∗
+4 + j, n ∗ 4 + k] ≥ Tj,k, then it is quantized to 1, and otherwise it is quantized to 0.
+Both DWT and DCT watermarking methods are tested. Surprisingly, we found that the
+watermarking method based on DWT we proposed in this paper is more robust than
+the method based on the DCT in [2-3]. The correlations are shown in Fig. 18(a) and
+(b), where (a) corresponds to the DWT approach while (b) corresponds to the DCT
+approach. One can clearly see a peak in the middle in Fig. 18(a) while no any clear peak
+in the middle can be seen in Fig. 18(b). In this experiment, the watermark was added
+to the middle frequencies in the DCT approach and no inverse halftoning was used.
+5. Conclusion
+In this paper, we have introduced a new multiresolution watermarking method using the
+discrete wavelet transform (DWT). In this method, Gaussian random noise is added to
+the large coefficients but not in the lowest subband in the DWT domain. The decoding is
+hierarchical. If distortion of a watermarked image is not serious, only a few bands worth
+of information are needed to detect the signature and therefore computational load can
+be saved. We have also implemented numerical examples for several kinds of distortions,
+such as additive noise, rescaling/stretching, compressed image with the wavelet approach
+such as the EZW, and halftoning. It is found that the DWT based watermark approach
+we proposed in this paper is robust to all the above distortions while the DCT approach
+is not, in particular, to distortions, such as compression, rescaling/stretching (1%, 2%,
+and 25% were tested), and additive noise with large noise variance.
+6. Acknowledgements
+Xia was supported in part by the Air Force Office of Scientific Research (AFOSR) under
+Grant No. F49620-97-1-0253 and the National Science Foundation CAREER Program
+under Grant MIP-9703377. Boncelet and Arce were supported in part through collaborative participation in the Advanced Telecommunications/Information Distribution Research Program (ATIRP) Consortium sponsored by the U.S. Army Research Laboratory
+under the Federated Laboratory Program, Cooperative Agreement DAAL01-96-0002.
+Arce was also supported in part by the National Science Foundation under the Grant
+MIP-9530923. They wish to thank the anonymous referees and the guest editor, Dr. Ingemar Cox, for their many helpful comments and suggestions that improved the clarity
+of this manuscript. They would also like to thank Mr. Jose Paredes for implementing
+numerous image compressions using the EZW method.
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 505
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+original image
+50 100 150 200 250 300 350 400 450 500
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+watermarked image with DWT
+50 100 150 200 250 300 350 400 450 500
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+(a) (b)
+Figure 6. (a) Original “pepper” image; (b) Watermarked image using DWT.
+watermarked image with DCT
+50 100 150 200 250 300 350 400 450 500
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+received noisy image I
+50 100 150 200 250 300 350 400 450 500
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+(a) (b)
+Figure 7. (a) Watermarked image using DCT; (b) Watermarked image with low
+additive noise.
+received noisy image II with DWT
+50 100 150 200 250 300 350 400 450 500
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+50 100 150 200 250 300 350 400 450 500
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+(a) (b)
+Figure 8. (a) Watermarked image with high additive noise; (b) Original “car”
+image.
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 506
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+0 1 2 3 4
+x 104
+−0.5
+0
+0.5
+1
+HH band, low noise image
+(a)
+0 1 2 3 4
+x 104
+−1.5
+−1
+−0.5
+0
+0.5
+1
+HH band, high noise image
+(b)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DWT correlation, high noise ima
+(d)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation, high noise image
+(c)
+Figure 9. Correlations for watermark detection for the “peppers” image: (a) DWT
+with HH1 band for low additive noise; (b) DWT with HH1 band for high additive
+noise; (d) DWT with HH1 and LH1 bands for high additive noise; (c) DCT for
+high additive noise.
+0 1 2 3 4
+x 104
+−1
+−0.5
+0
+0.5
+1
+HH band, low noise image
+(a)
+0 1 2 3 4
+x 104
+−1
+−0.5
+0
+0.5
+1
+HH band, high noise image
+(b)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DWT correlation, high noise ima
+(d)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation, high noise image
+(c)
+Figure 10. Correlations for watermark detection for the “car” image: (a) DWT
+with HH1 band for low additive noise; (b) DWT with HH1 band for high additive
+noise; (d) DWT with HH1 and LH1 bands for high additive noise; (c) DCT for
+high additive noise.
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 507
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+0 2 4 6 8
+x 104
+−0.5
+0
+0.5
+1
+DWT correlation
+(c)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(d)
+0 2 4 6 8
+x 104
+−0.5
+0
+0.5
+1
+DWT correlation
+(a)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(b)
+Figure 11. Correlations for watermark detection for the rescaled “peppers” image:
+(a) and (b) piecewise constant interpolation in the rescaling and (a) DWT (b) DCT;
+(c) and (d) cubic spline interpolation in the rescaling and (c) DWT (d) DCT.
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DWT correlation
+(c)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(d)
+0 2 4 6 8
+x 104
+−0.5
+0
+0.5
+1
+DWT correlation
+(a)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(b)
+Figure 12. Correlations for watermark detection for the rescaled “car” image: (a)
+and (b) piecewise constant interpolation in the rescaling and (a) DWT (b) DCT;
+(c) and (d) cubic spline interpolation in the rescaling and (c) DWT (d) DCT.
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 508
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+0 2 4 6 8
+x 104
+−0.5
+0
+0.5
+1
+DWT correlation
+(a)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+DCT correlation
+(b)
+0 2 4 6 8
+x 104
+−0.5
+0
+0.5
+1
+DWT correlation
+(c)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+DCT correlation
+(d)
+Figure 13. Correlations for watermark detection for the stretched “peppers” image: (a) and (b) piecewise constant interpolation in the rescaling and (a) DWT (b)
+DCT; (c) and (d) cubic spline interpolation in the rescaling and (c) DWT (d) DCT.
+0 2 4 6 8
+x 104
+−0.5
+0
+0.5
+1
+DWT correlation
+(c)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(d)
+0 2 4 6 8
+x 104
+−0.5
+0
+0.5
+1
+DWT correlation
+(a)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(b)
+Figure 14. Correlations for watermark detection for the stretched “car” image:
+(a) and (b) piecewise constant interpolation in the rescaling and (a) DWT (b) DCT;
+(c) and (d) cubic spline interpolation in the rescaling and (c) DWT (d) DCT.
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 509
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(d)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DWT correlation
+(c)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DWT correlation
+(a)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(b)
+Figure 15. Correlations for watermark detection for the stretched “peppers” image: (a) and (b) 1% stretching and (a) DWT (b) DCT; (c) and (d) 2% stretching
+and (c) DWT (d) DCT.
+0 2 4 6 8
+x 104
+−0.5
+0
+0.5
+1
+DWT correlation
+(a)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(b)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DWT correlation
+(c)
+0 2 4 6 8
+x 104
+−1
+−0.5
+0
+0.5
+1
+DCT correlation
+(d)
+Figure 16. Correlations for watermark detection for the stretched “car” image:
+(a) and (b) 1% stretching and (a) DWT (b) DCT; (c) and (d) 2% stretching and
+(c) DWT (d) DCT.
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 510
+#7038 - $15.00 US Received October 14, 1998; Revised November 25, 1998
+Figure 17. Correlations for watermark detection for compressed images: (a)
+DWT; (b) DCT.
+Figure 18. Correlations for watermark detection for halftoned images: (a) DWT;
+(b) DCT.
+(C) OSA 1998 7 December 1998 / Vol. 3, No. 12 / OPTICS EXPRESS 511
