@@ -1,6 +1,6 @@
 # Combined requirements for wmbench + dct on Google Colab
-# dct/requirements.txt
-numpy
+# compressai (Regen-VAE) requires numpy<2; pin 1.26.x (Colab opencv/jax may warn — usually OK).
+numpy>=1.26.0,<2.0
 scipy
 pillow
 matplotlib
