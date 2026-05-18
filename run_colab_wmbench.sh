@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Google Colab — clone wavess and run wmbench.
+# Google Colab — clone wavess, run on fast local disk, sync results to Drive.
 #
-# In a Colab cell:
-#   !bash /content/run_colab_wmbench.sh
+# Before running, mount Drive in Colab:
+#   from google.colab import drive
+#   drive.mount("/content/drive")
 #
-# Or download and run:
-#   !wget -q https://raw.githubusercontent.com/ademladhari/wavess/main/run_colab_wmbench.sh -O /content/run_colab_wmbench.sh
-#   !bash /content/run_colab_wmbench.sh
+# Then:
+#   !bash /content/wavess/run_colab_wmbench.sh
+#
+# Optional env:
+#   WAVESS_METHODS=dwt|dct
+#   WAVESS_DRIVE_ROOT=/content/drive/MyDrive
+#   WAVESS_DIFF_BATCH=8
+#   WAVESS_LPIPS_BATCH=32
+#   WAVESS_SKIP_RINSE4X=1
 
 REPO_URL="https://github.com/ademladhari/wavess.git"
 REPO_DIR="${WAVESS_REPO_DIR:-/content/wavess}"
 
-# If this script lives inside an already-cloned repo, use that tree instead of re-cloning.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$SCRIPT_DIR/wmbench/run_benchmark.py" ]]; then
   REPO_DIR="$SCRIPT_DIR"
 fi
 
 if [[ ! -f "$REPO_DIR/wmbench/run_benchmark.py" ]]; then
-  echo "[0/4] Cloning $REPO_URL -> $REPO_DIR"
+  echo "[0/6] Cloning $REPO_URL -> $REPO_DIR"
   rm -rf "$REPO_DIR"
   git clone --depth 1 "$REPO_URL" "$REPO_DIR"
 fi
@@ -28,43 +34,64 @@ fi
 cd "$REPO_DIR"
 echo "Using repo: $REPO_DIR"
 
-echo "[1/4] Installing combined requirements (dct + wmbench)..."
+echo "[1/6] Installing dependencies..."
 python -m pip install --upgrade pip -q
-# compressai needs numpy<2; pin before other packages.
 python -m pip install "numpy>=1.26.0,<2.0" -q
 python -m pip install -r "wmbench/requirements_colab_combined.txt" -q
+python -m pip install PyWavelets -q
 
-echo "[2/4] Paths (Google Drive MyDrive — mount Drive in Colab first)"
-# Mount Drive in a cell before running this script:
-#   from google.colab import drive
-#   drive.mount("/content/drive")
 DRIVE_ROOT="${WAVESS_DRIVE_ROOT:-/content/drive/MyDrive}"
-IMAGES_DIR="${WAVESS_IMAGES:-$DRIVE_ROOT/wmbench/images}"
-NEGATIVES_DIR="${WAVESS_NEGATIVES:-$DRIVE_ROOT/negative_500}"
-OUTPUT_DIR="${WAVESS_OUTPUT:-$DRIVE_ROOT/wmbench_results}"
+DRIVE_IMAGES="${WAVESS_DRIVE_IMAGES:-$DRIVE_ROOT/wmbench/images}"
+DRIVE_NEGATIVES="${WAVESS_DRIVE_NEGATIVES:-$DRIVE_ROOT/negative_500}"
+DRIVE_OUTPUT="${WAVESS_DRIVE_OUTPUT:-$DRIVE_ROOT/wmbench_results}"
+
+LOCAL_ROOT="${WAVESS_LOCAL_ROOT:-/content/wmbench_data}"
+LOCAL_IMAGES="$LOCAL_ROOT/images"
+LOCAL_NEGATIVES="$LOCAL_ROOT/negatives"
+LOCAL_OUTPUT="${WAVESS_LOCAL_OUTPUT:-/content/wmbench_output}"
+
+METHODS="${WAVESS_METHODS:-dwt}"
+DIFF_BATCH="${WAVESS_DIFF_BATCH:-8}"
+LPIPS_BATCH="${WAVESS_LPIPS_BATCH:-32}"
+EXTRA_ARGS=()
+if [[ "${WAVESS_SKIP_RINSE4X:-0}" == "1" ]]; then
+  EXTRA_ARGS+=(--skip-rinse4xdiff)
+fi
 
 if [[ ! -d "/content/drive/MyDrive" ]] && [[ "$DRIVE_ROOT" == /content/drive/MyDrive* ]]; then
-  echo "ERROR: Google Drive not mounted at /content/drive/MyDrive"
-  echo "Run in Colab first:"
-  echo "  from google.colab import drive"
-  echo "  drive.mount('/content/drive')"
+  echo "ERROR: Google Drive not mounted. Run: drive.mount('/content/drive')"
   exit 1
 fi
-if [[ ! -d "$IMAGES_DIR" ]]; then
-  echo "ERROR: images folder not found: $IMAGES_DIR"
-  echo "Put originals under MyDrive/wmbench/images or set WAVESS_IMAGES=/path/to/images"
+if [[ ! -d "$DRIVE_IMAGES" ]]; then
+  echo "ERROR: Drive images not found: $DRIVE_IMAGES"
   exit 1
 fi
-if [[ ! -d "$NEGATIVES_DIR" ]]; then
-  echo "ERROR: negatives folder not found: $NEGATIVES_DIR"
-  echo "Put negatives under MyDrive/negative_500 or set WAVESS_NEGATIVES=/path/to/negatives"
+if [[ ! -d "$DRIVE_NEGATIVES" ]]; then
+  echo "ERROR: Drive negatives not found: $DRIVE_NEGATIVES"
   exit 1
 fi
-echo "  images:    $IMAGES_DIR"
-echo "  negatives: $NEGATIVES_DIR"
-echo "  output:    $OUTPUT_DIR"
 
-echo "[3/4] GPU check"
+echo "[2/6] Copy Drive -> local disk (skip if already present)..."
+mkdir -p "$LOCAL_IMAGES" "$LOCAL_NEGATIVES" "$LOCAL_OUTPUT"
+if [[ ! "$(ls -A "$LOCAL_IMAGES" 2>/dev/null)" ]]; then
+  echo "  copying images -> $LOCAL_IMAGES"
+  cp -a "$DRIVE_IMAGES/." "$LOCAL_IMAGES/"
+else
+  echo "  images already on local disk: $LOCAL_IMAGES"
+fi
+if [[ ! "$(ls -A "$LOCAL_NEGATIVES" 2>/dev/null)" ]]; then
+  echo "  copying negatives -> $LOCAL_NEGATIVES"
+  cp -a "$DRIVE_NEGATIVES/." "$LOCAL_NEGATIVES/"
+else
+  echo "  negatives already on local disk: $LOCAL_NEGATIVES"
+fi
+
+echo "  local images:    $LOCAL_IMAGES"
+echo "  local negatives: $LOCAL_NEGATIVES"
+echo "  local output:    $LOCAL_OUTPUT"
+echo "  drive output:    $DRIVE_OUTPUT"
+
+echo "[3/6] GPU check"
 python - <<'PY'
 import torch
 print("torch:", torch.__version__, "| cuda:", torch.cuda.is_available())
@@ -72,15 +99,22 @@ if torch.cuda.is_available():
     print("device:", torch.cuda.get_device_name(0))
 PY
 
-echo "[4/4] Running wmbench benchmark..."
+echo "[4/6] Running benchmark on local disk (fast I/O)..."
 python "wmbench/run_benchmark.py" \
-  --methods dct \
-  --images "$IMAGES_DIR" \
-  --negatives "$NEGATIVES_DIR" \
-  --output "$OUTPUT_DIR" \
+  --methods $METHODS \
+  --images "$LOCAL_IMAGES" \
+  --negatives "$LOCAL_NEGATIVES" \
+  --output "$LOCAL_OUTPUT" \
   --device cuda \
-  --diffusion-attack-batch-size "${WAVESS_DIFF_BATCH:-4}" \
-  --lpips-batch-size "${WAVESS_LPIPS_BATCH:-16}" \
-  --resume
+  --diffusion-attack-batch-size "$DIFF_BATCH" \
+  --lpips-batch-size "$LPIPS_BATCH" \
+  --resume \
+  "${EXTRA_ARGS[@]}"
 
-echo "Done. Results in: $OUTPUT_DIR"
+echo "[5/6] Syncing results local -> Google Drive..."
+mkdir -p "$DRIVE_OUTPUT"
+cp -a "$LOCAL_OUTPUT/." "$DRIVE_OUTPUT/"
+
+echo "[6/6] Done."
+echo "  Local work:  $LOCAL_OUTPUT"
+echo "  Drive copy:  $DRIVE_OUTPUT"

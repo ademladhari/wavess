@@ -36,7 +36,8 @@ Normalization / Q
 
 Strength grids
 - WAVES discovers strengths from existing result trees (`waves/dev/leaderboard_table.py`); no central grid file.
-- Defaults: relative ∈ {0,0.25,0.5,0.75,1} for distortions; integer diffusion noise steps / VAE quality lists for regen.
+- Defaults (WAVES paper, 5 strengths each): relative ∈ {0, 0.25, 0.5, 0.75, 1};
+  Regen-Diff timesteps 40–200; Rinse-2x 20–100; Rinse-4x 10–50; Regen-VAE quality 1–7 (evenly spaced).
 """
 
 from __future__ import annotations

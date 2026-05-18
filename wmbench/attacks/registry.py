@@ -9,13 +9,15 @@ from wmbench.attacks.regeneration import DiffusionRegenAttack, Rinse2xDiffAttack
 
 # WAVES encodes distortion severity as relative strength in [0, 1] passed through
 # relative_strength_to_absolute (waves/distortions/distortions.py). No fixed grid file exists
-# in-repo; default sweep is explicit policy for wmbench.
-DEFAULT_RELATIVE_STRENGTHS: list[float] = [0.2, 0.3333, 0.4667, 0.6, 0.7333, 0.8667, 1.0]
+# in-repo; default sweep matches WAVES provenance in run_benchmark.py (5 points, includes 0).
+DEFAULT_RELATIVE_STRENGTHS: list[float] = [0.0, 0.25, 0.5, 0.75, 1.0]
 
-# regen.py passes integer noise_step to DiffWMAttacker and CompressAI quality to VAEWMAttacker.
-# Grids are runner defaults (not read from a WAVES config file).
-DEFAULT_REGEN_DIFFUSION_STRENGTHS: list[int] = [40, 50, 60, 70, 80, 90, 100]
-DEFAULT_REGEN_VAE_STRENGTHS: list[int] = [1, 2, 3, 4, 5, 6, 7]
+# WAVES paper appendix (regeneration attacks): five evenly spaced strengths between min and max.
+# umd-huang-lab/WAVES regeneration/regen.py — noise_step / CompressAI quality.
+DEFAULT_REGEN_DIFFUSION_STRENGTHS: list[int] = [40, 80, 120, 160, 200]  # Regen-Diff: timesteps 40–200
+DEFAULT_RINSE_2X_DIFFUSION_STRENGTHS: list[int] = [20, 40, 60, 80, 100]  # Rinse-2x: 20–100 per pass
+DEFAULT_RINSE_4X_DIFFUSION_STRENGTHS: list[int] = [10, 20, 30, 40, 50]  # Rinse-4x: 10–50 per pass
+DEFAULT_REGEN_VAE_STRENGTHS: list[int] = [1, 2, 4, 5, 7]  # Regen-VAE: quality 1–7 (5 evenly spaced)
 
 MISSING_ATTACKS: tuple[str, ...] = (
     "Regen-DiffP",  # regen_diffusion_prompt: no implementation in waves/regeneration/regen.py
@@ -67,7 +69,9 @@ def build_default_registry(
 
     dev = device or (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
     rel = DEFAULT_RELATIVE_STRENGTHS
-    d_steps = DEFAULT_REGEN_DIFFUSION_STRENGTHS
+    regen_diff_steps = DEFAULT_REGEN_DIFFUSION_STRENGTHS
+    rinse_2x_steps = DEFAULT_RINSE_2X_DIFFUSION_STRENGTHS
+    rinse_4x_steps = DEFAULT_RINSE_4X_DIFFUSION_STRENGTHS
     vq = DEFAULT_REGEN_VAE_STRENGTHS
     shared_diff_pipe: object | None = None
 
@@ -100,14 +104,14 @@ def build_default_registry(
         "DistCom-Deg": build_combo_attack("DistCom-Deg", "combo_degradation", rel),
         "DistCom-All": build_combo_attack("DistCom-All", "combo_all", rel),
         "Regen-Diff": DiffusionRegenAttack(
-            d_steps, diffusion_model_id, device=dev, pipe_provider=get_shared_diff_pipe
+            regen_diff_steps, diffusion_model_id, device=dev, pipe_provider=get_shared_diff_pipe
         ),
         "Regen-VAE": VAERegenAttack(vq, vae_model_name=vae_model_name, device=dev),
         "Rinse-2xDiff": Rinse2xDiffAttack(
-            d_steps, diffusion_model_id, device=dev, pipe_provider=get_shared_diff_pipe
+            rinse_2x_steps, diffusion_model_id, device=dev, pipe_provider=get_shared_diff_pipe
         ),
         "Rinse-4xDiff": Rinse4xDiffAttack(
-            d_steps, diffusion_model_id, device=dev, pipe_provider=get_shared_diff_pipe
+            rinse_4x_steps, diffusion_model_id, device=dev, pipe_provider=get_shared_diff_pipe
         ),
     }
     return attacks
