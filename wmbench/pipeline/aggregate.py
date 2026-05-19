@@ -3,10 +3,25 @@ from __future__ import annotations
 import csv
 import glob
 import json
+import math
 import os
 from collections import defaultdict
 
 from wmbench.metrics import aggregate as agg
+
+# Columns in results_raw.csv to average per (method, attack) across strengths.
+AVERAGED_METRIC_COLUMNS: tuple[str, ...] = (
+    "P",
+    "Q",
+    "PSNR",
+    "SSIM",
+    "NMI",
+    "LPIPS",
+    "FID",
+    "CLIP_FID",
+    "aesthetics_delta",
+    "artifacts",
+)
 
 
 def _write_results_raw(output_dir: str, raw_rows: list[dict]) -> None:
@@ -34,6 +49,76 @@ def _write_results_raw(output_dir: str, raw_rows: list[dict]) -> None:
         w.writeheader()
         for r in raw_rows:
             w.writerow(r)
+
+
+def _finite_mean(values: list[float]) -> float:
+    clean = [v for v in values if not (isinstance(v, float) and (math.isnan(v) or math.isinf(v)))]
+    if not clean:
+        return float("nan")
+    return float(sum(clean) / len(clean))
+
+
+def average_raw_rows(raw_rows: list[dict]) -> list[dict]:
+    """Mean of each metric over strength rows, grouped by (method, attack)."""
+    buckets: dict[tuple[str, str], dict[str, list[float]]] = defaultdict(
+        lambda: {c: [] for c in AVERAGED_METRIC_COLUMNS}
+    )
+    counts: dict[tuple[str, str], int] = defaultdict(int)
+    for row in raw_rows:
+        method = str(row.get("method", ""))
+        attack = str(row.get("attack", ""))
+        key = (method, attack)
+        counts[key] += 1
+        for col in AVERAGED_METRIC_COLUMNS:
+            if col not in row:
+                continue
+            try:
+                val = float(row[col])
+            except (TypeError, ValueError):
+                continue
+            buckets[key][col].append(val)
+    out: list[dict] = []
+    for (method, attack) in sorted(buckets.keys()):
+        row: dict = {
+            "method": method,
+            "attack": attack,
+            "n_strengths": counts[(method, attack)],
+        }
+        for col in AVERAGED_METRIC_COLUMNS:
+            row[f"avg_{col}"] = _finite_mean(buckets[(method, attack)][col])
+        out.append(row)
+    return out
+
+
+def _write_results_averaged(output_dir: str, averaged_rows: list[dict]) -> None:
+    os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, "results_averaged.csv")
+    if not averaged_rows:
+        return
+    fieldnames = ["method", "attack", "n_strengths"] + [f"avg_{c}" for c in AVERAGED_METRIC_COLUMNS]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        w.writeheader()
+        for r in averaged_rows:
+            w.writerow(r)
+
+
+def load_results_raw(path: str) -> list[dict]:
+    with open(path, encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def write_averaged_from_raw_csv(raw_csv_path: str, out_path: str | None = None) -> str:
+    """Build results_averaged.csv from an existing results_raw.csv."""
+    raw_csv_path = os.path.abspath(raw_csv_path)
+    if out_path is None:
+        out_path = os.path.join(os.path.dirname(raw_csv_path), "results_averaged.csv")
+    else:
+        out_path = os.path.abspath(out_path)
+    rows = load_results_raw(raw_csv_path)
+    averaged = average_raw_rows(rows)
+    _write_results_averaged(os.path.dirname(out_path), averaged)
+    return out_path
 
 
 def _write_results_leaderboard(output_dir: str, rows: list[dict]) -> None:
@@ -149,5 +234,6 @@ def run_aggregate_stage(work_parent: str, output_dir: str, methods: list[str]) -
         raw_rows.append(row)
 
     _write_results_raw(output_dir, raw_rows)
+    _write_results_averaged(output_dir, average_raw_rows(raw_rows))
     lb = _build_leaderboard(by_cell, anchors, methods)
     _write_results_leaderboard(output_dir, lb)

@@ -115,6 +115,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip the Rinse-4xDiff attack to reduce runtime.",
     )
     p.add_argument("--resume", action="store_true")
+    p.add_argument(
+        "--blind-detect",
+        action="store_true",
+        help="Blind detection: use embed sidecar only (no --images original at detect). Re-embed if sidecars lack dct_embed.",
+    )
     p.add_argument("--strength-config", default=None, help="JSON mapping attack name -> strengths list")
     p.add_argument(
         "--skip-aesthetics-metrics",
@@ -158,6 +163,10 @@ def main(argv: list[str] | None = None) -> int:
 
     device = _resolve_device(args.device.strip().lower() if args.device else "auto")
     print(f"wmbench device: {device} (torch {torch.__version__}, cuda available={torch.cuda.is_available()})")
+    if args.blind_detect:
+        print("Detection mode: blind (embed sidecar metadata; originals not used for detect)")
+    else:
+        print("Detection mode: non-blind (detect uses --images as original reference)")
 
     attacks = resolve_attacks(
         out,
@@ -221,6 +230,7 @@ def main(argv: list[str] | None = None) -> int:
             attack_list,
             strength_map,
             resume=args.resume,
+            blind_detect=args.blind_detect,
         )
         if args.profile_stages:
             _print_stage_profile(f"{m}/detect", time.perf_counter() - t0, device)

@@ -58,6 +58,8 @@ class DWTAdapter(WatermarkAdapter):
             seed=self.seed,
             largest_fraction=self.largest_fraction,
         )
+        payload = dict(payload)
+        payload["reference_gray"] = np.asarray(arr, dtype=np.float64)
         self._last_payload = payload
         if float(x_hat.max()) <= 1.0 + 1e-6:
             x_hat_uint8 = np.clip(np.rint(x_hat * 255.0), 0, 255).astype(np.uint8)
@@ -68,13 +70,28 @@ class DWTAdapter(WatermarkAdapter):
     def payload_for_meta(self) -> dict | None:
         return self._last_payload
 
-    def detect(self, image: Image.Image, original: Image.Image, *, meta: dict | None = None) -> float:
-        payload = meta
+    def detect(
+        self,
+        image: Image.Image,
+        original: Image.Image | None = None,
+        *,
+        meta: dict | None = None,
+        blind: bool = False,
+    ) -> float:
+        payload = meta if meta is not None else self._last_payload
         if payload is None:
-            payload = self._last_payload
-        if payload is None:
+            if blind:
+                return 0.0
             raise RuntimeError("DWTAdapter.detect requires meta (payload) from embed sidecar")
-        o = np.asarray(original.convert("L"), dtype=float)
+        if blind:
+            ref = payload.get("reference_gray")
+            if ref is None:
+                return 0.0
+            o = np.asarray(ref, dtype=float)
+        else:
+            if original is None:
+                raise ValueError("DWTAdapter non-blind detect requires original image")
+            o = np.asarray(original.convert("L"), dtype=float)
         c = np.asarray(image.convert("L"), dtype=float)
         if c.shape != o.shape:
             pil_c = Image.fromarray(c.astype(np.uint8) if c.max() > 1 else (c * 255).astype(np.uint8))

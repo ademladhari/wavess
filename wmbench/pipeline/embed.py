@@ -38,10 +38,13 @@ def run_embed(
             wm = adapter.embed(im.convert("RGB"))
         atomic_image_save(wm, dest)
         meta = {"method": adapter.name}
-        if adapter.name == "dwt" and hasattr(adapter, "payload_for_meta"):
+        if hasattr(adapter, "payload_for_meta"):
             pl = adapter.payload_for_meta()
             if pl is not None:
-                meta["dwt_payload"] = pl
+                if adapter.name == "dct":
+                    meta["dct_embed"] = pl
+                elif adapter.name == "dwt":
+                    meta["dwt_payload"] = pl
         with open(meta_sidecar_path(dest), "wb") as mf:
             pickle.dump(meta, mf, protocol=4)
 

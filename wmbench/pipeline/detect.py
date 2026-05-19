@@ -38,6 +38,14 @@ def _remove_truncated_attacked_images(paths: list[str], append_log: str) -> list
     return removed
 
 
+def _sidecar_embed_meta(method: str, sidecar: dict) -> dict | None:
+    if method == "dct":
+        return sidecar.get("dct_embed")
+    if method == "dwt":
+        return sidecar.get("dwt_payload")
+    return None
+
+
 def tpr_at_fpr(positive: np.ndarray, negative: np.ndarray, fpr_target: float = 0.001) -> float:
     """TPR at threshold = (1 - fpr_target) quantile of negative scores (99.9th pct for 0.1% FPR)."""
     if negative.size == 0:
@@ -57,6 +65,7 @@ def run_detect_stage(
     strength_values: dict[str, list],
     *,
     resume: bool = False,
+    blind_detect: bool = False,
 ) -> None:
     watermarked_dir = os.path.join(work_dir, "watermarked")
     attacked_root = os.path.join(work_dir, "attacked")
@@ -71,15 +80,18 @@ def run_detect_stage(
     for p in tqdm(neg_paths, desc=f"neg/{adapter.name}"):
         with Image.open(p) as im:
             neg = im.convert("RGB")
-        orig_path = os.path.join(originals_dir, os.path.basename(p))
-        if not os.path.isfile(orig_path):
-            raise FileNotFoundError(
-                "Negative image does not have a matching original by basename for calibration: "
-                f"{os.path.basename(p)!r} (expected original at {orig_path})"
-            )
-        with Image.open(orig_path) as oi:
-            orig = oi.convert("RGB")
-        neg_scores.append(float(adapter.detect(neg, orig, meta=None)))
+        if blind_detect:
+            neg_scores.append(float(adapter.detect(neg, None, meta=None, blind=True)))
+        else:
+            orig_path = os.path.join(originals_dir, os.path.basename(p))
+            if not os.path.isfile(orig_path):
+                raise FileNotFoundError(
+                    "Negative image does not have a matching original by basename for calibration: "
+                    f"{os.path.basename(p)!r} (expected original at {orig_path})"
+                )
+            with Image.open(orig_path) as oi:
+                orig = oi.convert("RGB")
+            neg_scores.append(float(adapter.detect(neg, orig, meta=None, blind=False)))
 
     for attack_name in attack_names:
         for strength in strength_values.get(attack_name, []):
@@ -116,19 +128,22 @@ def run_detect_stage(
             pos_scores: list[float] = []
             for ap in tqdm(atk_paths, desc=f"scores/{attack_name}/{stren_tag}"):
                 base = os.path.basename(ap)
-                orig_path = os.path.join(originals_dir, base)
                 wm_src = os.path.join(watermarked_dir, base)
                 with Image.open(ap) as im:
                     att = im.convert("RGB")
-                with Image.open(orig_path) as oi:
-                    oimg = oi.convert("RGB")
-                meta = None
+                embed_meta = None
                 sc = meta_sidecar_path(wm_src)
                 if os.path.isfile(sc):
                     with open(sc, "rb") as mf:
-                        m = pickle.load(mf)
-                    meta = m.get("dwt_payload")
-                pos_scores.append(float(adapter.detect(att, oimg, meta=meta)))
+                        sidecar = pickle.load(mf)
+                    embed_meta = _sidecar_embed_meta(adapter.name, sidecar)
+                if blind_detect:
+                    pos_scores.append(float(adapter.detect(att, None, meta=embed_meta, blind=True)))
+                else:
+                    orig_path = os.path.join(originals_dir, base)
+                    with Image.open(orig_path) as oi:
+                        oimg = oi.convert("RGB")
+                    pos_scores.append(float(adapter.detect(att, oimg, meta=embed_meta, blind=False)))
 
             out_json = os.path.join(out_dir, "scores.json")
             with open(out_json, "w", encoding="utf-8") as jf:
