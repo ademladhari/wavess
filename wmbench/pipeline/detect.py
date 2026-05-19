@@ -42,6 +42,8 @@ def _sidecar_embed_meta(method: str, sidecar: dict) -> dict | None:
         return sidecar.get("dwt_payload")
     if method in ("dct-dwt", "dct_dwt", "dctdwt"):
         return sidecar.get("dct_dwt_payload")
+    if method in ("dwt-dct-svd", "dwt_dct_svd", "dwtdctsvd"):
+        return sidecar.get("dwt_dct_svd_payload")
     if method == "svd":
         return sidecar.get("svd_payload")
     return None

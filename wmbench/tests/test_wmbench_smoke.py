@@ -33,3 +33,14 @@ def test_dct_dwt_roundtrip_bitscore():
     s = ad.detect(wm, None, meta=ad.payload_for_meta(), blind=True)
     assert s == s
     assert s > 0.5
+
+
+def test_dwt_dct_svd_roundtrip_bitscore():
+    from wmbench.watermarks import get_adapter
+
+    ad = get_adapter("dwt-dct-svd")
+    im = Image.new("RGB", (256, 256), color=(100, 150, 80))
+    wm = ad.embed(im)
+    s = ad.detect(wm, im, meta=ad.payload_for_meta(), blind=False)
+    assert s == s
+    assert s > 0.5

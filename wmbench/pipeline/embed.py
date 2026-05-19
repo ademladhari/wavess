@@ -47,6 +47,8 @@ def run_embed(
                     meta["dwt_payload"] = pl
                 elif adapter.name == "dct-dwt":
                     meta["dct_dwt_payload"] = pl
+                elif adapter.name == "dwt-dct-svd":
+                    meta["dwt_dct_svd_payload"] = pl
                 elif adapter.name == "svd":
                     meta["svd_payload"] = pl
         with open(meta_sidecar_path(dest), "wb") as mf:
