@@ -102,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
         pass
 
     p = argparse.ArgumentParser(description="wmbench: watermark robustness and quality benchmark")
-    p.add_argument("--methods", nargs="+", required=True, help="dct | dwt")
+    p.add_argument("--methods", nargs="+", required=True, help="dct | dwt | svd | dct-dwt")
     p.add_argument("--images", required=True, help="Directory of originals (clean host images)")
     p.add_argument("--negatives", required=True, help="Directory of negative (unwatermarked) images for detection calibration")
     p.add_argument("--output", required=True, help="Results root (work/, csv, plots, anchors)")

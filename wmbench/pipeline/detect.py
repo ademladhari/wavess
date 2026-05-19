@@ -14,28 +14,25 @@ from wmbench.pipeline.resume import is_done, mark_done
 from wmbench.watermarks.base import WatermarkAdapter
 
 
-def _remove_truncated_attacked_images(paths: list[str], append_log: str) -> list[str]:
-    """Drop unreadable images (e.g. interrupted PNG writes); delete files and log paths."""
-    removed: list[str] = []
-    for p in paths:
-        try:
-            with Image.open(p) as im:
-                im.load()
-                im.convert("RGB")
-        except OSError:
-            removed.append(p)
-            try:
-                os.unlink(p)
-            except OSError:
-                pass
-    if removed:
-        parent = os.path.dirname(append_log)
-        if parent:
-            os.makedirs(parent, exist_ok=True)
-        with open(append_log, "a", encoding="utf-8") as lf:
-            for p in removed:
-                lf.write(p + "\n")
-    return removed
+_IMG_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
+
+
+def _list_negative_image_paths(negatives_dir: str) -> list[str]:
+    """Top-level images first; if none, search recursively (e.g. Drive layout negative_500/images/)."""
+    root = os.path.abspath(negatives_dir)
+    top = sorted(
+        p
+        for p in glob.glob(os.path.join(root, "*"))
+        if os.path.isfile(p) and p.lower().endswith(_IMG_EXTS)
+    )
+    if top:
+        return top
+    deep = sorted(
+        p
+        for p in glob.glob(os.path.join(root, "**", "*"), recursive=True)
+        if os.path.isfile(p) and p.lower().endswith(_IMG_EXTS) and ".wmbench_meta" not in p
+    )
+    return deep
 
 
 def _sidecar_embed_meta(method: str, sidecar: dict) -> dict | None:
@@ -43,7 +40,30 @@ def _sidecar_embed_meta(method: str, sidecar: dict) -> dict | None:
         return sidecar.get("dct_embed")
     if method == "dwt":
         return sidecar.get("dwt_payload")
+    if method in ("dct-dwt", "dct_dwt", "dctdwt"):
+        return sidecar.get("dct_dwt_payload")
+    if method == "svd":
+        return sidecar.get("svd_payload")
     return None
+
+
+def _list_svd_payload_bank(watermarked_dir: str) -> list[dict]:
+    payloads: list[dict] = []
+    wm_paths = sorted(
+        p
+        for p in glob.glob(os.path.join(watermarked_dir, "*"))
+        if os.path.isfile(p) and p.lower().endswith(_IMG_EXTS) and ".wmbench_meta" not in p
+    )
+    for wp in wm_paths:
+        sc = meta_sidecar_path(wp)
+        if not os.path.isfile(sc):
+            continue
+        with open(sc, "rb") as mf:
+            sidecar = pickle.load(mf)
+        pl = sidecar.get("svd_payload")
+        if pl is not None:
+            payloads.append(pl)
+    return payloads
 
 
 def tpr_at_fpr(positive: np.ndarray, negative: np.ndarray, fpr_target: float = 0.001) -> float:
@@ -71,17 +91,31 @@ def run_detect_stage(
     attacked_root = os.path.join(work_dir, "attacked")
     scores_root = os.path.join(work_dir, "scores")
 
-    neg_paths = sorted(
-        p
-        for p in glob.glob(os.path.join(negatives_dir, "*"))
-        if os.path.isfile(p) and p.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".bmp"))
-    )
+    neg_paths = _list_negative_image_paths(negatives_dir)
+    if not neg_paths:
+        raise FileNotFoundError(
+            "No negative calibration images found under --negatives. "
+            f"Expected *.png/*.jpg/*.jpeg/*.webp/*.bmp under {os.path.abspath(negatives_dir)!r} "
+            "(top-level or any subfolder). Blind detection still needs negatives to set the TPR@FPR threshold."
+        )
+    svd_neg_payload_bank: list[dict] = []
+    if blind_detect and adapter.name == "svd":
+        svd_neg_payload_bank = _list_svd_payload_bank(watermarked_dir)
+        if not svd_neg_payload_bank:
+            raise RuntimeError(
+                "SVD blind detection needs key payloads from watermarked sidecars, but none were found. "
+                "Re-run embed for method svd so .wmbench_meta.pkl includes svd_payload."
+            )
     neg_scores: list[float] = []
-    for p in tqdm(neg_paths, desc=f"neg/{adapter.name}"):
+    for i, p in enumerate(tqdm(neg_paths, desc=f"neg/{adapter.name}")):
         with Image.open(p) as im:
             neg = im.convert("RGB")
         if blind_detect:
-            neg_scores.append(float(adapter.detect(neg, None, meta=None, blind=True)))
+            if adapter.name == "svd":
+                key_meta = svd_neg_payload_bank[i % len(svd_neg_payload_bank)]
+                neg_scores.append(float(adapter.detect(neg, None, meta=key_meta, blind=True)))
+            else:
+                neg_scores.append(float(adapter.detect(neg, None, meta=None, blind=True)))
         else:
             orig_path = os.path.join(originals_dir, os.path.basename(p))
             if not os.path.isfile(orig_path):
@@ -108,23 +142,6 @@ def run_detect_stage(
                 if os.path.isfile(p)
                 and p.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".bmp"))
             )
-            corrupt_log = os.path.join(work_dir, "truncated_attacked_removed.log")
-            removed = _remove_truncated_attacked_images(atk_paths, corrupt_log)
-            if removed:
-                attack_done = os.path.join(attacked_dir, ".done")
-                for flag in (attack_done, done_flag):
-                    if os.path.isfile(flag):
-                        os.unlink(flag)
-                partial_scores = os.path.join(out_dir, "scores.json")
-                if os.path.isfile(partial_scores):
-                    os.unlink(partial_scores)
-                names = ", ".join(os.path.basename(p) for p in removed[:20])
-                more = "" if len(removed) <= 20 else f" (+{len(removed) - 20} more)"
-                raise RuntimeError(
-                    "Removed unreadable attacked image(s) (often truncated after stopping the run mid-save). "
-                    f"Deleted {len(removed)} file(s); logged paths to {corrupt_log}. Examples: {names}{more}. "
-                    "Re-run with --resume to regenerate missing attacks and scores."
-                )
             pos_scores: list[float] = []
             for ap in tqdm(atk_paths, desc=f"scores/{attack_name}/{stren_tag}"):
                 base = os.path.basename(ap)

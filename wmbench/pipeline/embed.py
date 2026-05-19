@@ -45,6 +45,10 @@ def run_embed(
                     meta["dct_embed"] = pl
                 elif adapter.name == "dwt":
                     meta["dwt_payload"] = pl
+                elif adapter.name == "dct-dwt":
+                    meta["dct_dwt_payload"] = pl
+                elif adapter.name == "svd":
+                    meta["svd_payload"] = pl
         with open(meta_sidecar_path(dest), "wb") as mf:
             pickle.dump(meta, mf, protocol=4)
 

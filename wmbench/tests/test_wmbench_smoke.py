@@ -22,3 +22,14 @@ def test_dct_roundtrip_bitscore():
     s = ad.detect(wm, im)
     assert s == s
     assert s > 0.0
+
+
+def test_dct_dwt_roundtrip_bitscore():
+    from wmbench.watermarks import get_adapter
+
+    ad = get_adapter("dct-dwt")
+    im = Image.new("RGB", (512, 512), color=(160, 80, 200))
+    wm = ad.embed(im)
+    s = ad.detect(wm, None, meta=ad.payload_for_meta(), blind=True)
+    assert s == s
+    assert s > 0.5

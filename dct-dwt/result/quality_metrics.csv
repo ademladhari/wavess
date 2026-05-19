@@ -1,0 +1,5 @@
+metric,value
+MSE_host_vs_watermarked,2.0565843652566654e-05
+PSNR_host_vs_watermarked_dB,94.99933831017897
+SSIM_host_vs_watermarked,0.9999999972286275
+rho_watermark_correlation,0.9896929763820698

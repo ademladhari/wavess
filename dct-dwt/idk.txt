@@ -1,0 +1,693 @@
+Journal of Computer Science 3 (9): 740-746, 2007
+ISSN 1549-3636
+© 2007 Science Publications
+
+Combined DWT-DCT Digital Image Watermarking
+Ali Al-Haj
+Department of Computer Engineering, School of Electrical Engineering,
+Princess Sumaya University for Technology, PO Box 1928, Al-Jubeiha,
+11941 Amman, Jordan
+Abstract: The proliferation of digitized media due to the rapid growth of networked multimedia
+systems, has created an urgent need for copyright enforcement technologies that can protect copyright
+ownership of multimedia objects. Digital image watermarking is one such technology that has been
+developed to protect digital images from illegal manipulations. In particular, digital image
+watermarking algorithms which are based on the discrete wavelet transform have been widely
+recognized to be more prevalent than others. This is due to the wavelets' excellent spatial localization,
+frequency spread, and multi-resolution characteristics, which are similar to the theoretical models of
+the human visual system. In this paper, we describe an imperceptible and a robust combined
+DWT-DCT digital image watermarking algorithm. The algorithm watermarks a given digital image
+using a combination of the Discrete Wavelet Transform (DWT) and the Discrete Cosine Transform
+(DCT). Performance evaluation results show that combining the two transforms improved the
+performance of the watermarking algorithms that are based solely on the DWT transform.
+Key words: Digital image watermarking, image copyright protection, frequency-domain
+watermarking, Discrete Wavelet Transform (DWT), Discrete Cosine Transform (DCT)
+INTRODUCTION
+
+be more effective with respect to achieving the
+imperceptibility and robustness requirements of digital
+watermarking algorithms[6].
+Commonly used frequency-domain transforms
+include the Discrete Wavelet Transform (DWT), the
+Discrete Cosine Transform (DCT) and Discrete Fourier
+Transform (DFT). However, DWT[7] has been used in
+digital image watermarking more frequently due to its
+excellent spatial localization and multi-resolution
+characteristics, which are similar to the theoretical
+models of the human visual system[8]. Further
+performance improvements in DWT-based digital
+image watermarking algorithms could be obtained by
+combining DWT with DCT[9]. The idea of applying
+two transform is based on the fact that combined
+transforms could compensate for the drawbacks of each
+other, resulting in effective watermarking.
+In this paper, we will describe a digital image
+watermarking algorithm based on combining two
+transforms; DWT and DCT. Watermarking is done by
+altering the wavelets coefficients of carefully selected
+DWT sub-bands, followed by the application of the
+DCT transform on the selected sub-bands.
+
+The development of effective digital image
+copyright protection methods have recently become an
+urgent and necessary requirement in the multimedia
+industry due to the ever-increasing unauthorized
+manipulation and reproduction of original digital
+objects. The new technology of digital watermarking
+has been advocated by many specialists as the best
+method to such multimedia copyright protection
+problem[1,2]. Its expected that digital watermarking
+will have a wide-span of practical applications such as
+digital cameras, medical imaging, image databases, and
+video-on-demand systems, among many others[3].
+In order for a digital watermarking method to be
+effective it should be imperceptible, and robust to
+common image manipulations like compression,
+filtering, rotation, scaling cropping, collusion attacks
+among many other digital signal processing operations.
+Current digital image watermarking techniques can be
+grouped into two major classes: spatial-domain
+and frequency-domain watermarking techniques[4].
+Compared
+to
+spatial
+domain
+techniques[5],
+frequency-domain watermarking techniques proved to
+
+Corresponding Author: Ali Al-Haj, Department of Computer Engineering, School of Electrical Engineering,
+Princess Sumaya University for Technology, PO Box 1928, Al-Jubeiha,
+11941 Amman, Jordan
+
+740
+
+J. Computer Sci., 3 (9): 740-746, 2007
+watermarking is based on two facts. The first fact is
+that much of the signal energy lies at low-frequencies
+sub-band which contains the most important visual
+parts of the image. The second fact is that high
+frequency components of the image are usually
+removed through compression and noise attacks. The
+watermark is therefore embedded by modifying the
+coefficients of the middle frequency sub-band so
+that the visibility of the image will not be affected
+and the watermark will not be removed by
+compression[10, 11,12, 13].
+
+THE DCT AND DWT TRANSFORMS
+The DCT and DWT transforms have been
+extensively used in many digital signal processing
+applications. In this section, we introduce the two
+transforms briefly, and outline their relevance to the
+implementation of digital watermarking.
+The DCT transform: The discrete cosine transforms is
+a technique for converting a signal into elementary
+frequency components [9]. It represents an image as a
+sum of sinusoids of varying magnitudes and
+frequencies. With an input image, x, the DCT
+coefficients for the transformed output image, y, are
+computed according to Eq. 1 shown below. In the
+equation, x, is the input imagehaving N x M pixels,
+x(m,n) is the intensity of the pixel in row m and column
+n of the image, and y(u,v) is the DCT coefficient in row
+u and column v of the DCT matrix.
+y ( u, v ) =
+
+2
+M
+
+M −1 N −1
+2
+αuαv
+x ( m, n )
+N
+u = 0 v =0
+
+( 2m + 1) u ∏ cos ( 2n + 1) v ∏
+cos
+2M
+
+The DWT transform: Wavelets are special functions
+which, in a form analogous to sines and cosines in
+Fourier analysis, are used as basal functions for
+representing signals[7]. For 2-D images, applying DWT
+corresponds to processing the image by 2-D filters in
+each dimension. The filters divide the input image into
+four non-overlapping multi-resolution sub-bands LL1,
+LH1, HL1 and HH1. The sub-band LL1 represents the
+coarse-scale DWT coefficients while the sub-bands
+LH1, HL1 and HH1 represent the fine-scale of DWT
+coefficients. To obtain the next coarser scale of
+wavelet coefficients, the sub-band LL1 is further
+processed until some final scale N is reached. When N
+is reached we will have 3N+1 sub-bands consisting of
+the multi-resolution sub-bands LLN and LHx, HLx and
+HHx where x ranges from 1 until N.
+Due to its excellent spatio-frequency localization
+properties, the DWT is very suitable to identify the
+areas in the host image where a watermark can be
+embedded effectively. In particular, this property
+allows the exploitation of the masking effect of the
+human visual system such that if a DWT coefficient is
+modified, only the region corresponding to that
+coefficient will be modified. In general most of the
+image energy is concentrated at the lower frequency
+sub-bands LLx and therefore embedding watermarks in
+these sub-bands may degrade the image significantly.
+Embedding in the low frequency sub-bands, however,
+could increase robustness significantly. On the other
+hand, the high frequency sub-bands HHx include the
+edges and textures of the image and the human eye is
+not generally sensitive to changes in such sub-bands.
+This allows the watermark to be embedded without
+being perceived by the human eye. The compromise
+adopted by many DWT-based watermarking algorithm,
+is to embed the watermark in the middle frequency
+ub-bands LHx and HLx where acceptable
+performance of imperceptibility and robustness could
+be achieved[14,15,16,17,18,19,20].
+
+(1)
+
+2N
+
+where
+αu =
+
+1
+2
+
+u=0
+u = 1,2,…, N − 1
+
+1
+
+αv =
+
+1
+2
+1
+
+v=0
+v = 1,2,…, N − 1
+
+The image is reconstructed by applying inverse
+DCT operation according to Eq. 2:
+x ( m, n ) =
+
+2
+M
+
+2 M −1 N −1
+α u α v y ( u, v )
+N u =0 v = 0
+
+( 2m + 1) u ∏ cos ( 2n + 1) v ∏
+cos
+2M
+
+(2)
+
+2N
+
+The popular block-based DCT transform segments
+an image non-overlapping blocks and applies DCT to
+each block. This results in giving three frequency
+sub-bands: low frequency sub-band, mid-frequencysub-ban and high frequency sub-band. DCT-based
+741
+
+J. Computer Sci., 3 (9): 740-746, 2007
+
+Fig. 1: Combined DWT-DCT watermark embedding procedure.
+
+(a)
+
+Step 6: Generate two uncorrelated pseudorandom
+sequences. One sequence is used to embed the
+watermark bit 0 (PN_0) and the other sequence is sued
+to embed the watermark bit 1 (PN_1). Number of
+elements in each of the two pseudorandom sequences
+must be equal to the number of mid-band elements of
+the DCT-transformed DWT sub-bands.
+
+(b)
+
+Step 7: Embed the two pseudorandom sequences, PN_0
+and PN_1, with a gain factor , in the DCT transformed
+4x4 blocks of the selected DWT sub-bands of the host
+image.
+Embedding is not applied to all coefficients of the
+DCT block, but only to the mid-band
+DCT
+coefficients. If we donate X as the matrix of the midband coefficients of the DCT transformed block, then
+embedding is done as follows:
+
+Fig. 2: Multi-resolution DWT sub-bands of the original
+image
+THE COMBINED DCT-DWT ALGORTIHM
+The watermark embedding procedure is depicted
+in Fig. 1 followed by a detailed explanation.
+Step 1: Apply DWT to decompose the cover host
+image into four non-overlapping multi-resolution
+sub-bands: LL1, HL1, LH1, and HH1.
+
+If the watermark bit is 0 then
+X '= X +
+
+Step 2: Apply DWT again to sub-band HL1 to get four
+smaller sub-bands and choose the HL2 sub-band as
+shown in Fig. 2 a. Or, apply DWT to sub-band HH1 to
+get four smaller sub-bands and choose the HH2
+sub-band as shown in Fig. 2 b.
+
+* PN_0
+
+(3)
+
+otherwise,
+if the watermark bit is 1 then,
+X '= X +
+
+* PN_1
+
+(4)
+
+Step 8: Apply inverse DCT (IDCT) to each block after
+its mid-band coefficients have been modified to embed
+the watermark bits as described in the previous step.
+
+Step 3: Divide the sub-band HL2 (or HH2 ) into 4 x 4
+blocks.
+
+Step 9: Apply the inverse DWT (IDWT) on the DWT
+transformed image, including the modified sub-band, to
+produce the watermarked host image.
+The watermark extraction procedure is depicted in
+Fig. 3, and described in details in the following steps.
+The combined DWT-DCT algorithm is a blind
+
+Step 4: Apply DCT to each block in the chosen
+sub-band (HL2 or HH2) .
+Step 5: Re-formulate the grey-scale watermark image
+into a vector of zeros and ones.
+742
+
+J. Computer Sci., 3 (9): 740-746, 2007
+
+Fig. 3: Combined DWT-DCT watermark extraction procedure
+watermarking algorithm, and thus the original host
+image is not required to extract the watermark.
+Step 1: Apply DWT to decompose the watermarked
+image into four non-overlapping multi-resolution subbands: LL1, HL1, LH1, and HH1.
+Fig. 4: 'Lina' host image
+
+Step 2: Apply DWT to HL1 to get four smaller subbands, and choose the sub-band HL2, as shown in
+Fig. 2 a. Or, apply DWT to the HH1 sub-band to get
+four smaller sub-bands, and choose the HH2 sub-band,
+as shown in Fig. 2 b.
+
+Fig. 5: Original watermark
+
+Step 3: Divide the sub-ban HL2 (or HH2) into 4×4
+blocks.
+
+Step 7: Reconstruct the watermark using the extracted
+watermark bits, and compute the similarity between the
+original and extracted watermarks.
+
+Step 4: Apply DCT to each block in the chosen
+sub-band (HL2 or HH2), and extract the mid-band
+coefficients of each DCT transformed block.
+
+PERFORMANCE EVALUATION
+
+Step 5: Regenerate the two pseudorandom sequences
+(PN_0 and PN_1) using the same seed used in the
+watermark embedding procedure.
+
+We evaluated the performance of the combined
+DWT-DCT image watermarking algorithms using a
+512×512 'Lena' as the original cover host image, and a
+256×256 grey-scale image of the expression 'copyright'
+as the watermark image. The two images are shown in
+Fig. 4 and 5, respectively.
+
+Step 6: For each block in the sub-band HL2 (or HH2),
+calculate the correlation between the mid-band
+coefficients and the two generated pseudorandom
+sequences (PN_0 and PN_1). If the correlation with
+the PN_0 was higher than the correlation with PN_1,
+then the extracted watermark bit is considered 0,
+otherwise the extracted watermark is considered 1.
+
+Performance Evaluation Metrics: Watermarking
+algorithms are usually evaluated with respect to two
+metrics: imperceptibility and robustness [21]. The two
+metrics are described below.
+743
+
+J. Computer Sci., 3 (9): 740-746, 2007
+Table 1: The 'Lina' host image watermarked at different 2-DWT sub-bands
+Watermarked Image
+---------------------------------------------------------------------------------------------------------------------------------------DWT-Only
+DWT-DCT
+DWT-Only
+DWT-DCT
+Original Image
+(HL2)
+(HL2)
+(HH2)
+(HH2)
+
+PSNR = 80.190
+
+PSNR = 97.072
+
+Imperceptibility: Imperceptibility means that the
+perceived quality of the host image should not be
+distorted by the presence of the watermark. As a
+measure of the quality of a watermarked image, the
+peak signal to noise ratio (PSNR) is typically used.
+PSNR in decibels (dB) is given below in Eq. 5.
+PSNRdB = 10 ⋅ log10
+= 20 ⋅ log10
+
+MAX 2 I
+MSE
+
+Performance results: We carried out the watermark
+embedding algorithm described in the previous section.
+Applying the 1-level DWT of the 'Lina' image produced
+four 256256 sub-bands; LL1, LH1, HL1 and HH1. Since
+embedding the watermark beyond the first DWT level
+is more effective, we decided to embed the watermark
+in HL2 (or HH2). The selected 128×128 sub-band was
+divided into 4×4 blocks giving a total of 1024 blocks.
+The DCT transform was then applied to each block in
+the chosen sub-band, after which the watermark was
+embedded according to Eq. 3 and 4.
+
+(5)
+
+Robustness: Robustness is a measure of the immunity
+of the watermark against attempts to remove or degrade
+it, internationally or unintentionally, by different types
+of digital signal processing attacks[22]. In this chapter,
+we will report on robustness results which we obtained
+for three major digital signal processing operations
+(attacks): Gaussian noise, image compression and
+image cropping. The three attacks are a few, however,
+they are good representatives of the more general
+attacks. That is the Gaussian noise is a watermark
+degrading attack, JPEG compression is a watermark
+removal attack and cropping is a watermark dispositioning geometrical attack. We measured the
+similarity between the original watermark and the
+watermark extracted from the attacked image using the
+correlation factor ρ given below in Eq. 6.
+
+ρ ( w, wˆ ) =
+
+i =1
+N
+i =1
+
+wi
+
+Imperceptibility: We evaluated imperceptibility of the
+combined DWT-DCT algorithm by measuring PSNR
+for the HL2 and HH2 sub-bands. HL2 gave a PSNR
+value of 97.072 while HH2 gave 97.083. The difference
+is small between the two PSNR values indicating
+comparable performance of the two sub-bands. In
+contrast, and as shown in Table 1, the difference
+between the PSNR values of the DWT-Only and the
+combined DWT-DCT algorithms is relatively large.
+This indicates that improvement in imperceptibility can
+be achieved by applying DCT on a DWT transformed
+HL2 (or HH2) sub-band.
+Robustness: Table 2 shows the correlation values
+between the original watermark and the watermarks
+extracted from sub-bands HL2 and HH2 after being
+subjected to different attacks, independently.
+The correlation values given in Table 2 show
+clearly that the combined DWT-DCT watermarking
+algorithm outperforms the conventional DWT-Only
+approach with respect to robustness against the
+Gaussian noise and cropping attacks. The results are
+better regardless of whether the watermark was
+embedded in HL2 or HH2, however, HH2 gave better
+
+wi wˆ i
+2
+
+N
+i =1
+
+(6)
+
+wˆ i
+
+PSNR = 97.083
+
+between 0 (random relationship) to 1 (perfect linear
+relationship). In general, a correlation coefficient of
+about 0.75 or above is considered acceptable.
+
+MAX I
+MSE
+
+N
+
+PSNR = 77.098
+
+2
+
+where N is the number of pixels in watermark, w
+and wˆ are the original and extracted watermarks
+respectively. The correlation factor ρ may take values
+744
+
+J. Computer Sci., 3 (9): 740-746, 2007
+Table 2: Correlation values due to three different attacks
+Correlation Factor
+---------------------------------------------------------------------------------------------------------------------------------------------------Fausain (Noise)
+Compression (Quality)
+Cropping (Block Size)
+---------------------------------------------------------------------------------------------------------------------------0
+0.4
+0.8
+0
+40
+80
+8
+152
+200
+DWT-Only
+(HL2)
+0.736
+0.660
+0.445
+0.478
+0.733
+0.741
+0.746
+0.623
+0.550
+DWT-DCT
+(HL2)
+0.9738
+0.8359
+0.5029
+0.012
+0.604
+0.958
+0.968
+0.778
+0.549
+DWT-Only
+(HH2)
+0.726
+0.652
+0.467
+0.447
+0.698
+0.726
+0.723
+0.643
+0.574
+DWT-DCT
+(HH2)
+0.989
+0.868
+0.546
+0.023
+0.065
+0.314
+0.989
+0.884
+0.696
+
+Fig. 6: Extracted watermarks from the cropped HH2-watermarked image using DWT only
+
+Fig. 7: Extracted watermarks from the cropped HH2-wateramrked image using DWT and DCT
+
+Fig. 8: Extracted watermarks from the compressed HL2-watermarked image using DWT only
+
+Fig. 9: Extracted watermarks from the compressed HL2-watermarked image using DWT and DCT
+RESULTS AND DISCUSSION
+
+robustness against cropping compared with HL2.
+Figure 6 shows the extracted watermarks from HH2
+when DWT-Only was used. In contrast, the better
+combined DWT-DCT results are shown in Figure 7
+which shows the extracted watermarks from the HH2
+sub-band.
+As given in Table 2 and illustrated in Fig. 8 and 9,
+the robustness of the DWT-Only approach against the
+JPEG compression attack is better than that of the
+combined DWT-DCT algorithm. This is due to the fact
+that the DCT is the core component of the JPEG
+compression, and therefore applying DCT at a DCTtransformed image degraded the quality of the
+embedded watermark greatly.
+
+We described the performance of the combined
+DWT-DCT watermarking algorithm. For the sake of
+comparison, we also evaluated the watermarking
+performance when DWT-Only was used. The results
+we obtained for the DWT-Only approach indicated a
+better imperceptibility performance was obtained when
+the watermark was embedded in the HL2 or HH2 subbands. The robustness performance, however, was not
+acceptable. To improve performance, we combined
+DWT with the another equally powerful transform; the
+DCT. The combined DWT-DCT watermarking
+algorithm's imperceptibility performance was better
+745
+
+J. Computer Sci., 3 (9): 740-746, 2007
+than the performance of the DWT-Only approach.
+Moreover, the improvement in robustness brought by
+the combined DWT-DCT algorithm was considerably
+high.
+
+9.
+
+Rao, K. and P. Yip. Discrete Cosine Transform:
+algorithms, advantages, applications. Academic
+Press, USA, 1990.
+10. Chu, W, 2003. "DCT-Based Image Watermarking
+Using Subsampling," IEEE Trans. Multimedia,
+5(1): 34-38.
+11. Lin, S. and C. Chin, 2000. "A Robust DCT-based
+Watermarking for Copyright Protection," IEEE
+Trans. Consumer Electronics, 46(3): 415-421.
+12. Deng, F. and B. Wang, 2003. "A novel technique
+for robust image watermarking in the DCT
+domain," in Proc. of the IEEE 2003 Int. Conf. on
+Neural Networks and Signal Processing, vol. 2,
+pp: 1525-1528.
+13. Wu, C. and W. Hsieh, 2000. "Digital watermarking
+using zerotree of DCT," IEEE Trans. Consumer
+Electronics , vol. 46, no. 1, pp: 87-94.
+14. Hsieh, M., D. Tseng, and Y. Huang, 2001. "Hiding
+Digital Watermarks Using Multiresolution Wavelet
+Transform," IEEE Trans. on Industrial Electronics,
+48(5): 875-882.
+15. Reddy, A. and B. Chatterji, 2005. "A New Wavelet
+Based Logo-watermarking Scheme," Pattern
+Recognition Letters, 26(7): 1019-1027.
+16. Wang, S. and Y. Lin, 2004. "Wavelet Tree
+Quantization
+for
+Copyright
+Protection
+Watermarking," IEEE Trans. Image Processing,
+vol. 13, no. 2, pp: 154-164.
+17. Hsu, C. and J. Wu, 1998. "Multiresolution
+Watermarking for Digital Images," IEEE Trans. on
+Circuits and Systems- II, 45(8): 1097-1101.
+18. Tay, P. and J. Havlicek, 2002. "Image
+Watermarking Using Wavelets," in Proc. of the
+IEEE Midwest Symposium on Circuits and
+Systems, pp: 258-261, Oklahoma, USA.
+19. Nikolaidis, A. and I. Pitas, 2003. "Asymptotically
+optimal detection for additive watermarking in the
+DCT and DWT domains," IEEE Trans. Image
+Processing , 2(10): 563-571.
+20. Tsai, M. and H. Hung, 2005. "DCT and DWTbased Image Watermarking Using Subsampling,"
+in Proc. of the 2005 IEEE Fourth Int. Conf. on
+Machine Learning and Cybernetics, pp: 5308-5313,
+China.
+21. Ejima, M. and A. Myazaki, 2001." On the
+evaluation of performance of digital watermarking
+in the frequency domain," in Proc. of the IEEE
+Int. Conf. on Image Processing, 2: 546-549.
+22. Voloshynovskiy, S., S. Pereira and T. Pun, 2001.
+"Attacks on Digital Watermarks: Classification,
+Estimation-Based Attacks, and Benchmarks,"
+Comm. Magazine, 39(8): 118-126.
+
+CONCLUSIONS
+The discrete wavelet transform (DWT) and the
+discrete cosine transform (DCT) have been applied
+successfully in many in digital image watermarking. In
+this paper, we described a combined DWT-DCT digital
+image watermarking algorithm. Watermarking was
+done by embedding the watermark in the first and
+second level DWT sub-bands of the host image,
+followed by the application of DCT on the selected
+DWT sub-bands. The combination of the two
+transforms improved the watermarking performance
+considerably when compared to the DWT-Only
+watermarking approach. In conclusion, in DWT-based
+digital
+watermarking
+applications,
+combining
+appropriate transforms with the DWT may have a
+positive impact on performance of the watermarking
+system.
+REFERENCES
+1.
+2.
+
+3.
+
+4.
+
+5.
+6.
+
+7.
+8.
+
+Cox, I., M. Miller and J. Bloom, 2002. Digital
+Watermarking, Academic Press, USA.
+Langelaar, G., I. Setyawan and R. Lagendijk, 2000.
+"Watermarking Digital Image and Video Data: A
+State-of-Art Overview," IEEE Signal Processing
+Magazine, 17(5):20-46.
+Arnold, M., M. Schumucker and S. Wolthusen,
+2003. Techniques and Applications of Digital
+Watermarking and Content Protection. Artech
+House, USA.
+Potdar, V., S. Han and E. Chang, 2005. A Survey
+of Digital Image Watermarking Techniques, in
+Proc. of the IEEE International Conference on
+Industrial Informatics, pp: 709-716, Perth,
+Australia.
+Chan, C. and L. Cheng, 2004. Hiding Data in
+Images by Simple LSB Substitution, Pattern
+Recognition, 37(3):469-474.
+Wang, R., C. Lin and J. Lin, " Copyright protection
+of digital images by means of frequency domain
+watermarking," Proc. of the SPIE Conference On
+Mathematics of Data/Image Coding, Compression,
+and Encryption, USA.
+Vetterli, M. and J. Kova evi , 1995. Wavelets and
+Subband Coding. Prentice Hall, USA.
+Wolfgang, R., C. Podilchuk and E. Delp, 1999.
+"Perceptual Watermarks for Digital Images and
+Video," Proc. of the IEEE, vol. 87, no. 7,
+pp: 1108-1126.
+746
+
+
