@@ -7,6 +7,7 @@ from wmbench.watermarks.dct import DCTAdapter
 from wmbench.watermarks.dct_dwt import DCTDWTAdapter
 from wmbench.watermarks.dwt_dct_svd import DWTDCTSVDAdapter
 from wmbench.watermarks.dwt import DWTAdapter
+from wmbench.watermarks.flexible import FlexibleAdapter
 from wmbench.watermarks.svd import SVDAdapter
 
 _ADAPTERS: dict[str, type[WatermarkAdapter]] = {
@@ -18,6 +19,8 @@ _ADAPTERS: dict[str, type[WatermarkAdapter]] = {
     "dwt-dct-svd": DWTDCTSVDAdapter,
     "dwt_dct_svd": DWTDCTSVDAdapter,
     "dwtdctsvd": DWTDCTSVDAdapter,
+    "flexible": FlexibleAdapter,
+    "flex": FlexibleAdapter,
     "svd": SVDAdapter,
 }
 
@@ -38,6 +41,7 @@ __all__ = [
     "DCTDWTAdapter",
     "DWTDCTSVDAdapter",
     "DWTAdapter",
+    "FlexibleAdapter",
     "SVDAdapter",
     "WatermarkAdapter",
     "get_adapter",

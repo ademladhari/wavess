@@ -32,7 +32,7 @@ def run_embed(
     for p in tqdm(image_paths, desc=f"embed/{adapter.name}"):
         base = os.path.basename(p)
         dest = os.path.join(out_dir, base)
-        if resume and os.path.isfile(dest):
+        if resume and os.path.isfile(dest) and os.path.isfile(meta_sidecar_path(dest)):
             continue
         with Image.open(p) as im:
             wm = adapter.embed(im.convert("RGB"))
@@ -51,6 +51,8 @@ def run_embed(
                     meta["dwt_dct_svd_payload"] = pl
                 elif adapter.name == "svd":
                     meta["svd_payload"] = pl
+                elif adapter.name == "flexible":
+                    meta["flexible_payload"] = pl
         with open(meta_sidecar_path(dest), "wb") as mf:
             pickle.dump(meta, mf, protocol=4)
 

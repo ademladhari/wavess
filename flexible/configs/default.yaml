@@ -1,0 +1,145 @@
+# Strict reproduction config for Luo et al. "Flexible and Lightweight
+# Watermarking Framework for SDMs" (IEEE IoT J. 2026).
+#
+# All values below come directly from the paper (Sec. III / IV-A).
+# Values labeled `assumption:` are not stated in the paper and were
+# fixed to the smallest plausible setting matching Fig. 3.
+
+seed: 42
+
+sdm:
+  # Sec. IV-A.1: "SDM V2.1 and the dataset Stable-Diffusion-Prompts are
+  # adopted to train the watermark extractor Dext and the watermark
+  # decoder Ddec. DPMSolver is used for sampling with a step count of 25."
+  pretrained_id: "sd2-community/stable-diffusion-2-1-base"
+  scheduler: "dpmsolver_multistep"
+  num_inference_steps: 25
+  guidance_scale: 7.5        # Sec. IV-B: "guidance scale of 7.5"
+  # Sec. IV-A.4: "size of the Gaussian noise vector is 4 x 64 x 64, and the
+  # size of the generated image is 3 x 512 x 512."
+  image_size: 512
+  latent_channels: 4
+  latent_size: 64
+  dtype: "float16"           # 8 GB VRAM memory budget
+  attention_slicing: true
+  vae_slicing: true
+  enable_xformers: false     # no sm_120 wheels yet; keep attention slicing
+
+watermark:
+  # Sec. IV-A: "1000 prompts ... three watermark capacities" + Table I.
+  bit_lengths: [16, 24, 48]
+  primary_bits: 48
+  # Sec. III-D: "the threshold for 48 bits is set at 33 bits."
+  # tau(n) derived from Bernoulli(0.5) with FPR <= 0.01 (paper Sec. III-D).
+  thresholds:
+    48: 33
+    24: 18   # assumption: smallest k s.t. P(Bin(24,0.5) >= k) <= 0.01, k=18
+    16: 13   # assumption: smallest k s.t. P(Bin(16,0.5) >= k) <= 0.01, k=13
+
+pretrain:
+  # Sec. III-C + Sec. IV-A.4: "Adam optimizer with a learning rate of 1e-5
+  # and a batch size of 2. Both lambda1 and lambda2 are set to 1."
+  optimizer: "adam"
+  lr: 1.0e-5
+  batch_size: 2
+  lambda1: 1.0                # weight on KL (L_d)
+  lambda2: 1.0                # weight on MSE (L_r)
+  # assumption: paper does not give an epoch count. Train to convergence
+  # with a hard cap, guarded by the loss thresholds below.
+  max_steps: 10000
+  log_every: 200
+  save_every: 5000
+  target_L_r: 1.0e-3
+  target_L_d: 1.0e-2
+
+generate_pairs:
+  # Pre-generated pool to satisfy 8 GB VRAM (SDM forward-only here;
+  # extractor/decoder trained offline without SDM loaded).
+  n_train_pairs: 100
+  n_val_pairs: 100
+  seed: 1234
+  dataset_name: "Gustavosta/Stable-Diffusion-Prompts"
+  split: "train"
+  # Store prompt + watermark + zT + image (fp16) on disk.
+  out_dir: "data/pairs"
+
+train_extractor:
+  # Sec. III-D + IV-A.4: "Adam optimizer with a learning rate of 1e-5 and
+  # a batch size of 2."
+  lr: 1.0e-5
+  batch_size: 2
+  max_steps: 80000
+  log_every: 200
+  save_every: 5000
+
+finetune_decoder:
+  lr: 1.0e-5
+  batch_size: 2
+  max_steps: 40000
+  log_every: 200
+  save_every: 5000
+
+eval:
+  dataset_name: "Gustavosta/Stable-Diffusion-Prompts"
+  split: "train"
+  n_prompts: 1000            # Sec. IV-A.1: "1000 prompts are randomly
+                             # selected and tested"
+  eval_seed: 20260101
+  out_dir: "outputs/eval"
+
+attacks:
+  # Sec. IV-A.2 (fixed-strength values) and Fig. 5 (swept strengths).
+  fixed:
+    brightness_factor: 3.0
+    contrast_factor: 2.0
+    gauss_noise_sigma: 0.05
+    jpeg_quality: 50
+    median_kernel: 5
+    gauss_blur_kernel: 3
+    resize_factor: 0.9
+    bm3d_sigma_psd: 10
+  swept:
+    brightness_factor: [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+    contrast_factor: [1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+    gauss_noise_sigma: [0.01, 0.02, 0.03, 0.05, 0.07, 0.10]
+    jpeg_quality: [90, 70, 50, 30, 20, 10]
+    median_kernel: [3, 5, 7, 9, 11]
+    gauss_blur_kernel: [3, 5, 7, 9, 11]
+    resize_factor: [0.95, 0.9, 0.8, 0.7, 0.6, 0.5]
+    bm3d_sigma_psd: [5, 10, 15, 20, 25]
+  generative:
+    bmshj18_quality: [1, 2, 3, 4, 5, 6, 7, 8]
+    cheng20_quality: [1, 2, 3, 4, 5, 6]
+    zhao23_steps: [20, 40, 60, 80, 100, 120]
+
+normality:
+  # Sec. IV-C: "a collection of 5000 initial latent vectors embedded with a
+  # fixed 48-bit watermark"
+  n_samples: 5000
+  bits: 48
+
+paths:
+  checkpoints: "checkpoints"
+  outputs: "outputs"
+  hf_cache: "hf_cache"
+
+# Architectural widths not specified in the paper (Fig. 3 shows only block
+# counts). Smallest plausible values matching Fig. 3 are adopted.
+arch:
+  encoder:
+    base_channels: 64      # assumption
+    conv_blocks: 4         # paper: "four pairs of combination layers ... Conv + BN + ReLU"
+    kernel_size: 3
+    # spatial size of intermediate feature map before the linear heads
+    latent_feature_hw: 8   # assumption (4 downsamplings from 128 -> 8 after reshape)
+  decoder:
+    base_channels: 64      # assumption
+    tconv_blocks: 4        # paper: "four pairs ... TConv + BN + ReLU"
+    kernel_size: 4
+  extractor:
+    in_downsample: 16      # reduce 512 -> 32 for transformer tokens (assumption)
+    token_dim: 128         # assumption; unspecified in paper
+    transformer_layers: 2  # paper: "Transformer encoder with two layers"
+    transformer_heads: 1   # paper: "and one head"
+    mlp_hidden: 256        # assumption
+    ffn_dim: 256           # assumption

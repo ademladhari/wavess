@@ -1,0 +1,52 @@
+# wmbench + flexible watermarking (Kaggle / Colab)
+# Flexible code lives at <waves-repo>/flexible/ (auto-detected; override with WMBENCH_FLEXIBLE_ROOT).
+# Install PyTorch with CUDA separately if the runtime lacks a matching build:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+#
+# compressai (Regen-VAE) requires numpy<2 — install numpy first, then the rest.
+
+numpy>=1.26.0,<2.0
+scipy>=1.11.0,<1.14
+pillow>=10.0.0
+matplotlib>=3.8.0
+tqdm>=4.66.0
+click
+pyyaml>=6.0.0
+
+# wmbench core / image metrics
+scikit-image>=0.22.0
+scikit-learn
+pandas
+PyWavelets
+
+# flexible config + models
+omegaconf>=2.3.0
+einops>=0.8.0
+safetensors>=0.4.3
+
+# diffusion (flexible embed + wmbench Regen/Rinse)
+diffusers>=0.30.0
+transformers>=4.44.0
+accelerate>=0.33.0
+huggingface-hub>=0.24.0
+
+# attacks
+compressai>=1.2.6
+opencv-python>=4.9.0
+
+# wmbench + flexible evaluation
+lpips
+clean-fid>=0.1.35
+open-clip-torch>=2.24.0
+pytorch-fid>=0.3.0
+pyiqa>=0.1.10
+
+# optional flexible training deps (small; safe to include)
+datasets>=2.20.0
+bm3d>=4.0.0
+
+# utility
+pyarrow
+
+# CLIP-FID in wmbench evaluate (install if missing):
+# pip install git+https://github.com/openai/CLIP.git

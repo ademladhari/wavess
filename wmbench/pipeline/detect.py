@@ -46,10 +46,13 @@ def _sidecar_embed_meta(method: str, sidecar: dict) -> dict | None:
         return sidecar.get("dwt_dct_svd_payload")
     if method == "svd":
         return sidecar.get("svd_payload")
+    if method in ("flexible", "flex"):
+        return sidecar.get("flexible_payload")
     return None
 
 
-def _list_svd_payload_bank(watermarked_dir: str) -> list[dict]:
+def _list_payload_bank(watermarked_dir: str, payload_key: str) -> list[dict]:
+    """Collect embed payloads from watermarked sidecars (for blind SVD or non-blind dwt-dct-svd negatives)."""
     payloads: list[dict] = []
     wm_paths = sorted(
         p
@@ -62,10 +65,14 @@ def _list_svd_payload_bank(watermarked_dir: str) -> list[dict]:
             continue
         with open(sc, "rb") as mf:
             sidecar = pickle.load(mf)
-        pl = sidecar.get("svd_payload")
+        pl = sidecar.get(payload_key)
         if pl is not None:
             payloads.append(pl)
     return payloads
+
+
+def _list_svd_payload_bank(watermarked_dir: str) -> list[dict]:
+    return _list_payload_bank(watermarked_dir, "svd_payload")
 
 
 def tpr_at_fpr(positive: np.ndarray, negative: np.ndarray, fpr_target: float = 0.001) -> float:
@@ -108,6 +115,14 @@ def run_detect_stage(
                 "SVD blind detection needs key payloads from watermarked sidecars, but none were found. "
                 "Re-run embed for method svd so .wmbench_meta.pkl includes svd_payload."
             )
+    dwt_dct_svd_neg_payload_bank: list[dict] = []
+    if not blind_detect and adapter.name == "dwt-dct-svd":
+        dwt_dct_svd_neg_payload_bank = _list_payload_bank(watermarked_dir, "dwt_dct_svd_payload")
+        if not dwt_dct_svd_neg_payload_bank:
+            raise RuntimeError(
+                "dwt-dct-svd non-blind detection needs embed sidecars (dwt_dct_svd_payload) under "
+                f"{watermarked_dir}. Re-run embed so each watermarked image has .wmbench_meta.pkl."
+            )
     neg_scores: list[float] = []
     for i, p in enumerate(tqdm(neg_paths, desc=f"neg/{adapter.name}")):
         with Image.open(p) as im:
@@ -127,7 +142,10 @@ def run_detect_stage(
                 )
             with Image.open(orig_path) as oi:
                 orig = oi.convert("RGB")
-            neg_scores.append(float(adapter.detect(neg, orig, meta=None, blind=False)))
+            neg_meta = None
+            if adapter.name == "dwt-dct-svd":
+                neg_meta = dwt_dct_svd_neg_payload_bank[i % len(dwt_dct_svd_neg_payload_bank)]
+            neg_scores.append(float(adapter.detect(neg, orig, meta=neg_meta, blind=False)))
 
     for attack_name in attack_names:
         for strength in strength_values.get(attack_name, []):

@@ -1,0 +1,38 @@
+# Core: PyTorch with CUDA 12.4 support for RTX 5060 (Blackwell sm_120).
+# Install torch/torchvision separately via setup_env.ps1 from the cu124 index,
+# or upgrade to nightly if stable wheels lack sm_120 support for your toolchain.
+# The version markers below are fallbacks and are ignored by setup_env.ps1.
+torch>=2.7.0
+torchvision>=0.22.0
+
+# Diffusion stack
+diffusers>=0.30.0
+transformers>=4.44.0
+accelerate>=0.33.0
+safetensors>=0.4.3
+huggingface_hub>=0.24.0
+
+# Datasets
+datasets>=2.20.0
+
+# Image processing / attacks
+pillow>=10.0.0
+opencv-python>=4.9.0
+numpy>=1.26.0,<2.0.0
+scipy>=1.11.0
+bm3d>=4.0.0
+compressai>=1.2.6
+
+# Evaluation metrics
+pytorch-fid>=0.3.0
+pyiqa>=0.1.10
+open_clip_torch>=2.24.0
+clean-fid>=0.1.35
+
+# Utilities
+omegaconf>=2.3.0
+tqdm>=4.66.0
+einops>=0.8.0
+tensorboard>=2.17.0
+matplotlib>=3.8.0
+pyyaml>=6.0.0

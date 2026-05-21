@@ -1,0 +1,1134 @@
+Abstract—The application of stable diffusion models (SDMs)
+in Internet of Things (IoT) image processing raises significant ethical concerns, particularly regarding model copyright
+infringement and the dissemination of inappropriate artificial
+intelligence (AI)-generated images. Model watermarking technology has proven effective for copyright verification and tracing
+the source model of AI-generated content (AIGC). While initialnoise-modification-based watermarking can provide provable
+security and achieve lossless embedding, existing methods rely
+on denoising diffusion implicit model (DDIM) inversion for
+watermark extraction, which suffer from inherent precision
+limitations that compromise extraction accuracy. More critically,
+most of the existing approaches of this type still rely on
+access to the original or a compatible SDM during watermark
+verification, which introduces considerable practical constraints
+due to the model’s size and computational demands. To address
+these limitations, an end-to-end flexible SDM watermarking
+framework is proposed that replaces the DDIM inversion process
+with a lightweight watermark extractor, thereby eliminating
+the dependency on inversion in conventional provably secure
+watermarking. Specifically, a universal watermark extractor
+across SDM V1/V2 variants is designed based on a Transformer
+and multilayer perceptron (MLP) framework, complemented by
+fine-tuning a pretrained watermark decoder, to directly recover
+watermark information from generated images. Experimental
+results confirm that our watermarking method yields superior
+performance in terms of fidelity and robustness. The lightweight
+extractor offers additional advantages of low computational
+cost and high transmission efficiency, providing an efficient and
+practical solution for watermark extraction in SDM-generated
+images.
+Index Terms—Copyright protection, latent space, stable diffusion models (SDMs), watermark extraction model, watermarking.
+I. INTRODUCTION
+WITH the remarkable development of latent diffusion
+models (LDMs) [1] in the domain of high-fidelity
+image synthesis, users can conveniently operate various commercial LDMs, such as Imagen [2], stable diffusion models
+(SDMs) [3], and DALLE-2 [4], to generate a vast number of
+realistic images that are extensively spread on the Internet.
+However, the misuse of SDMs by users has given rise to
+Received 11 June 2025; revised 11 November 2025; accepted 15 December
+2025. Date of publication 24 December 2025; date of current version 26 March
+2026. This work was supported in part by the National Natural Science
+Foundation of China under Grant 62450067 and Grant 62302286, and in part
+by the Natural Key Research and Development Program of China under Grant
+2023YFF0905000. (Corresponding authors: Li Li; Xinpeng Zhang.)
+The authors are with the School of Communication and Information Engineering, Shanghai University, Shanghai 200444, China (e-mail: luohuixin@
+shu.edu.cn; llichn@shu.edu.cn; xzhang@shu.edu.cn).
+Digital Object Identifier 10.1109/JIOT.2025.3647881
+several issues. Generated images are now at risk of being
+stolen and spammed, leading to a blurring of the demarcation
+between original and replicated works [5]. Additionally, some
+malicious users are exploiting SDMs to generate illegal images
+with malicious content to pursue illegal profits. Meanwhile,
+with the increasing integration of SDMs into Internet of Things
+(IoT) scenarios [6], such as transforming textual monitoring
+data into visual representations for intuitive analysis, the
+demand for content accountability becomes more critical. The
+abuse and improper use of these carefully trained and optimized models not only harm the rights of model developers but
+also exacerbate ethical concerns. Therefore, tagging generated
+content is urgently needed for copyright authentication and
+misuse prevention.
+Digital watermarking serves as a robust technology for
+copyright protection and source tracing, which is widely
+applied in the realm of multimedia [7], [8]. By extracting
+relevant watermark information embedded in images when
+necessary, the owner can identify the illegal distribution and
+use of images. In recent years, researchers have expanded
+the application of digital watermarking technology to deep
+learning models, with a particular focus on SDMs. As a result,
+a variety of watermarking techniques have been successively
+developed. These watermarking methods for diffusion models
+are generally categorized into two main types: ownership
+protection watermarking for artificial intelligence (AI) models
+[9] and source tracing watermarking of AI-generated content (AIGC) [10], which is also called AIGC watermarking.
+Ownership protection watermarking typically verifies the ownership of SDMs based on predefined input-output pairs. In
+contrast, AIGC watermarking embeds watermark information
+into all images produced by the model. This enables the extraction of watermark data from every generated image, thereby
+facilitating the tracing of the image’s origin throughout its
+dissemination. This article primarily focuses on the technology
+of generated image traceability watermarking.
+AIGC watermarking is initially implemented through post
+hoc digital image watermarking techniques; however, the
+watermarking module is proven to be easily removable due
+to its independence from the SDMs. To address this limitation, various approaches have been investigated to integrate
+watermarks into the model itself. The schemes are mainly
+designed from two aspects: fine-tuning the crucial structure
+of SDM and modifying the initial noise vector. The first kind
+of method inserts the watermark into the crucial elements of
+the image generation mechanism, such as variational autoen2327-4662 © 2025 IEEE. All rights reserved, including rights for text and data mining, and training of artificial intelligence and
+similar technologies. Personal use is permitted, but republication/redistribution requires IEEE permission.
+See https://www.ieee.org/publications/rights/index.html for more information.
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+LUO et al.: FLEXIBLE AND LIGHTWEIGHT WATERMARKING FRAMEWORK FOR SDMs 13951
+coder (VAE) [11] and UNet [12]. As a typical example, the
+StableSignature method [13] employed a simplified version
+of HiDDeN as the watermark encoder–decoder during the
+pretraining phase. Subsequently, the pretrained watermark
+decoder was adopted to adjust the VAE decoder for watermark
+embedding. Combined with the two-stage training strategy, the
+watermark content was added to the UNet with a watermark
+low-rank adaptation module to implement glass-box protection
+[14]. The second design takes advantage of the property that
+the denoising sampling procedure guided by the denoising
+diffusion implicit model (DDIM) is approximately reversible
+with a fixed random seed. The Tree-Ring scheme [15] was the
+pioneer in this design angle, leveraging the invariance properties of the Fourier space to embed the watermark. Yet, the
+initial noise vector failed to maintain a Gaussian distribution.
+As a consequence, the overall arrangement of the generated
+image deviated slightly from the original. On the basis of the
+Tree-Ring scheme, two latter schemes introduced modified
+sampling and deep learning methods, embedding the watermark while maintaining the Gaussian distribution. Yang et al.
+[16] processed the watermark information into a latent variable
+representation with the same distribution as the initial noise
+vector to generate the denoised image. Lei et al. [17] explored
+a unified representation between watermark information and
+the initial latent vector to embed the watermark, which was
+the first multibit watermarking scheme of this kind. Due to the
+watermarked initial noise following a Gaussian distribution,
+the visual quality of the corresponding watermarked image is
+theoretically proven to be lossless. Furthermore, by directly
+modifying the latent variable space, the training process of
+watermark embedding can be significantly simplified, yielding
+plug-and-play application outcomes. Therefore, this type of
+watermarking algorithm, which modifies the initial noise, is
+widely considered.
+Despite the aforementioned advancements, initial-noisemodification-based watermarking still faces significant limitations. First, accurate watermark extraction necessitates the
+restoration of the corresponding initial noise vector. However,
+due to the intrinsic imprecision associated with the DDIM
+inversion process and insufficient prior knowledge of the text
+prompt, it fails to recover a latent vector that is entirely identical to the original. Second, successful watermark extraction
+requires consistency between the SDM used for image generation and the one utilized for the watermark extraction, which
+implies that the exact SDM must be provided to the regulatory
+department to extract the watermark for verification. In this
+way, the watermark extractor tends to be bulky, which poses
+practical challenges and significantly restricts its deployment
+flexibility. Moreover, the model owner may refuse to share the
+original model’s parameters with the regulatory department
+due to privacy concerns.
+To overcome the limitations of this type of watermarking
+scheme and enhance its real-world applicability, a universal
+and lightweight watermark extractor module across SDM
+V1/V2 variants based on the Transformer and multilayer
+perceptron (MLP) architecture is presented, which can directly
+recover the watermark information from the generated images
+without relying on the DDIM inversion process. This design
+decouples the watermark extraction process from the original
+SDM, thereby making it significantly more flexible and
+adaptable, especially in cases where the original SDM is
+unavailable. Additionally, the watermark encoder and decoder
+are pretrained together to embed and retrieve the watermark
+within the latent space, and the watermark decoder is subsequently fine-tuned in conjunction with the trained watermark
+extractor to further improve the watermark extraction performance. The primary contributions of this work are detailed in
+the following.
+1) Considering the initial-noise-modification-based watermarking strategy, a flexible and generalizable watermark
+verification framework for SDM is introduced. Unlike
+existing methods, the proposed method enables direct
+watermark extraction from generated images without
+requiring access to the original diffusion model used for
+generation.
+2) A universal watermark extractor module across SDM
+V1/V2 variants is designed to realize the function of the
+DDIM inversion process for recovering the watermarked
+initial noise, facilitating subsequent watermark decoding. Built upon a lightweight Transformer and MLP
+architecture, it effectively extracts embedded watermarks
+with minimal computational overhead.
+3) Extensive experiments demonstrate that the proposed
+SDM watermarking scheme achieves high fidelity
+in watermarked generated images, strong robustness
+against attacks, and low computational cost, thereby
+enhancing practicality and scalability for real-world
+deployment scenarios.
+The following sections of this article are organized as
+follows. In Section I, the related work about diffusion models
+and watermarking technologies is provided. The threat model
+and the detailed proposed SDM watermarking scheme are
+described in Section III. In Section IV, experimental results
+are dwelled on. Finally, a conclusion is reached in Section V.
+II. RELATED WORK
+A. Diffusion Models
+Diffusion models have surfaced as remarkable instruments
+for producing high-quality images. Considering the difference
+in the generation space, these models are categorized into two
+types: pixel-space diffusion models [18], [19] and latent-space
+diffusion models [20], [21]. The former synthesizes images
+directly from a vector of sampled Gaussian noise in the pixel
+domain. While the latter based on DDIM [22] is introduced
+to enhance computational efficiency. In this model, the latent
+features are produced from the Gaussian noise in a compressed
+latent space, and then, these are decoded by a pretrained VAE
+[23] to generate an image.
+Based on supposing the ordinary differential equation process allows for reversal when the step size is limited in the
+small state, namely xt−1 − xt ≈ xt+1 − xt
+, the DDIM inversion
+from xt
+to xt+1 is followed as:
+xt+1 =
+p
+α¯t+1 xˆ
+t
+0 +
+p
+1 − α¯t+1θ (xt) (1)
+where ˆx
+t
+0
+is the acquired image from the starting image x0
+through the DDIM process and θ is the noise estimation
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+13952 IEEE INTERNET OF THINGS JOURNAL, VOL. 13, NO. 7, 1 APRIL 2026
+network. xt and xt+1 are the noised samples at the timestamps
+t and t + 1, respectively. In this way, when an image x0 is
+supplied along with an initial noise xT , SDM watermarking
+methods based on the modification of the initial noise vector
+can apply the DDIM inversion to obtain the watermarked
+noise vector ˆxT , where ˆxT ≈ xT is required for extracting the
+embedded watermark information.
+SDM is a representative implementation of the LDM, which
+is developed based on the extensive LAION-5B text–image
+pairs dataset [24] and exhibits excellent and stable image
+generation capability. In this article, SDMs are adopted to
+evaluate the proposed watermarking scheme.
+B. Watermarking for Digital Image
+Digital image watermarking serves as a potent copyright
+protection technique that entails the incorporation of a watermark into an image after its generation. Initially, traditional
+digital image watermarking methods are designed in two distinct domains: spatial domain [25], [26] and transform domain
+[27], [28]. Among them, the transform-based watermarking
+schemes demonstrate greater robustness in defending against
+some common attacks. Deep learning-based watermarking
+methods take a step further by adding the special neural
+network layers or noise layers when training both the watermark embedding and extraction modules [29], [30]. These
+approaches significantly enhance their robustness against more
+complex attacks. However, a significant and unavoidable drawback exists in these digital image watermarking technologies.
+Illegal users can circumvent the use of these watermarking
+techniques by simply refusing to embed the watermark into
+the already generated images.
+C. Watermarking for AIGC of SDMs
+Currently, numerous studies have explored watermarking
+techniques for images generated by diffusion models. One
+mainstream approach involves modifying the training data
+itself. Drawing on the watermark embedding concept of digital
+image watermarking, Zhao et al. [31] embedded binary watermark information into the original image with a pretrained
+watermark encoder and then employed the watermarked data
+to train SDM to make the generated images watermarked. To
+prevent the unauthorized use of private data, Wang et al. [32]
+applied a signal function to inject the unique watermark
+information into the protected image dataset to generate
+watermarked outputs. Zhu et al. [33] designed a conditional
+generative network that jointly learned visible watermarks
+with the protected images to obtain adversarial watermarked
+images. Liu et al. [34] injected the watermark into the key
+pixels, which could affect the denoising ability of SDM
+when generated images were distorted, thereby achieving
+data protection capability. However, data-modification-based
+watermarking methods often struggle with generalization and
+fail to guarantee effectiveness on unseen datasets.
+Another line of research focuses on adjusting the structure
+of SDM, which primarily adheres to the two-stage framework.
+At first, the watermark encoder and decoder are subjected
+to pretraining. Subsequently, the watermark decoder is finetuned in conjunction with the VAE decoder, ensuring that the
+generated images carry the watermark information. Min et al.
+[35] modified the first layer of UNet and then embedded the
+watermark during a special number of denoising iterations.
+Kim et al. [36] proposed an approach where the watermark
+is first converted into intermediate fingerprint through a
+mapping network, followed by the integration via decoder
+parameter modification to achieve watermark embedding.
+Meng et al. [37] added a message coupler module between
+the watermark encoder–decoder and the diffusion model
+to balance watermark fidelity and image quality. However,
+such algorithms demand an exceedingly large quantity of
+computational resources during the training and fine-tuning
+processes, posing significant barriers to their practical
+implementation and scalability.
+A more recent and flexible direction involves watermark
+embedding in the latent space, modifying the initial noise
+utilized for sampling. Following this, the watermarked initial
+noise vector is obtained and subjected to a denoising procedure
+to produce the watermarked image. Zhang et al. [38] performed the DDIM inversion on the original generated image
+and then injected the watermark into the obtained inverse
+initial noise vector. Besides, following the image generation
+process, an image enhancement module was added to improve
+perceptual quality. Liu et al. [39] proposed the mirror diffusion
+model, where the watermark was determined by a specific set
+of constraints and embedded by mapping the generated data
+to the constraint set. To mark more watermark information,
+Zhang et al. [40] utilized the convolutional neural network to
+encode the watermark information into a latent representation,
+which was fused with the latent variables and then decoded
+via VAE to create the watermarked image. Arabi et al. [41]
+employed a generated Fourier pattern to insert watermark
+information and devised a two-stage detection framework for
+extraction. The key advantage of modifying the initial noise
+is that watermark embedding can be achieved in a plug-andplay format. This simplicity makes it an attractive option for
+the generation of protected images.
+III. PROPOSED SCHEME
+In this section, the details of the designed SDM watermarking scheme are presented, which aims to safeguard the
+copyright of SDM and trace the users who generate the
+images. The threat model of the designed scheme is first
+described in Section III-A. Then, Section III-B presents the
+overview of the entire watermarking scheme. The corresponding detailed processes of the pretraining stage for watermark
+encoder and decoder, and the fine-tuning stage watermark
+embedding and watermark extracting are elaborated in Sections III-C and III-D, respectively.
+A. Threat Model
+The threat model is illustrated in Fig. 1, involving three crucial parties: the model owner R, the user S , and the regulatory
+department V. The model owner R possesses an original SDM
+Go. To manage and monitor the usage of SDM, R applies
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+LUO et al.: FLEXIBLE AND LIGHTWEIGHT WATERMARKING FRAMEWORK FOR SDMs 13953
+Fig. 1. Threat model: the model owner allocates a unique watermark to each user and distributes watermarked SDMs. Given a text prompt, the user generates
+a watermarked image, which may be attacked. The suspicious image is submitted to the regulatory department. Unlike previous methods requiring VAE
+encoder and DDIM inversion, which the model owner may withhold submission for privacy, our approach pre-submits a pretrained watermark extractor. This
+extractor retrieves the embedded watermark, enabling identification and traceability tasks via statistical tests.
+a pre-defined watermarking algorithm to create and provide
+specialized watermarked SDMs for different users. For each
+user S i(i = 1, 2, . . . , M), the model owner R assigns a unique
+SDM Gi(i = 1, 2, . . . , M) with the corresponding watermark
+wi(i = 1, 2, . . . , M) embedded. The watermarking algorithm I
+is meticulously crafted to integrate the watermark within the
+generated images without compromising the original image
+quality, ensuring that users remain oblivious to its presence.
+For instance, given the text prompt, the image x generated by
+user S M will contain this special watermark wM.
+For the initial-noise-modification-based SDM watermarking
+schemes, which are known for preserving image fidelity,
+watermark extraction typically relies on the generative model
+itself. This design necessitates that the regulatory department
+V have access to the original SDM’s parameters to perform
+the DDIM inverse process for watermark extraction. However,
+this raises a fundamental privacy and trust dilemma in practical
+deployment scenarios, where the model owner R is reluctant
+to share proprietary model parameters to V. To address this, a
+novel watermark verification framework is proposed, where
+the model owner R does not retain or access user-specific
+watermarked models during the verification phase. Instead, at
+the practical deployment stage, R only pre-submits a pretrained
+watermark extractor to V as the legitimate detection tool. This
+enables independent verification while preserving the privacy
+of the model owner’s proprietary models.
+When a watermarked generated image x
+0
+is released on
+the public platform for potentially illegal purposes, V can
+utilize the pre-submitted watermark extractor to extract a
+watermark wd from x
+0
+. Subsequently, V carries out two key
+detection tasks: identification and traceability, without requiring any involvement from R. These two processes involve
+different statistical tests of bit comparison, where the former
+is tested between wd and the unique watermark wM, while
+the latter is operated between wd and all the watermarks
+wi(i = 1, 2, . . . , M) to find the most matching one. The details
+of these tasks are as follows.
+1) Identification: Judge whether this image is generated by
+SDM based on the presence of the watermark.
+2) Traceability: Point out which user generates this image
+by the special watermarked SDM on the basis of the
+exact watermark bit comparison.
+This framework guarantees the model owner’s privacy, which
+means that R never needs to disclose model parameters or
+architectures to V during the verification stage.
+It needs to be considered that the watermarked generated
+image x may be different from the watermarked detection
+image x
+0 due to some possible purposeful or inadvertent
+attacks, and people can nevertheless understand the contents of
+detected images accurately. Additionally, the traceability task
+needs a multibit watermark.
+B. Overview
+The overall procedure of the designed SDM watermarking
+scheme is presented in Fig. 2, which consists of two ordered
+parts: 1) the pretraining stage of watermark encoder and
+decoder and 2) the fine-tuning stage of watermark embedding
+and extraction. For the former part, watermark encoder E
+is pretrained to transform the original watermark w into
+the latent vector zT , serving as the initial noise input for
+SDM. Concurrently, the watermark decoder D is pretrained
+to retrieve the watermark w0 from zT . For the latter part,
+following watermark injection via encoder E and general SDM
+generation process, the watermark extraction unfolds in two
+steps. The first step is to train the watermark extractor Dext
+to restore the watermarked latent vector z
+0
+T
+. The second step
+is to fine-tune the pretrained watermark decoder D based on
+the trained watermark extractor Dext, and then, the fine-tuned
+watermark decoder Ddec is obtained. Finally, the extracted
+watermark wd is adopted to verify the copyright of the model
+and ensure user traceability. The pretraining stage lays the
+foundation for accurate watermark encoding and decoding in
+the latent space. Meanwhile, the fine-tuning stage refines the
+watermark extraction process, ensuring high-performance and
+dependable watermark retrieval.
+C. Pretraining Stage for Watermark Encoder and Decoder
+For an SDM, the input initial noise during image generation
+typically follows a Gaussian distribution. However, if the
+watermarked initial noise deviates from the original Gaussian
+distribution, it will induce changes in the layout of watermarked generated images and compromise their generation
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+13954 IEEE INTERNET OF THINGS JOURNAL, VOL. 13, NO. 7, 1 APRIL 2026
+Fig. 2. Proposed SDM watermarking scheme. (a) In the pretraining stage, the watermark encoder and the watermark decoder are jointly trained. The encoder
+can encode the original binary watermark into a latent vector, and the decoder can decode the latent vector back to the binary watermark. (b) In the finetuning stage for watermark embedding and extraction, the watermark extractor is trained to convert the watermarked image into a latent vector, and then, the
+watermark decoder is fine-tuned to decode the obtained latent vector with the watermark extractor frozen.
+quality. Therefore, maintaining the original distribution of the
+input initial noise is essential for ensuring the image quality.
+During the pretraining stage, the watermark encoder E and
+the watermark decoder D are designed separately to generate
+watermarked initial noise with a Gaussian distribution and
+extract the embedded watermark information from it. The
+training goal of E is to build a mapping from the watermark
+information to the watermarked initial noise within a standard
+Gaussian distribution, taking into account both the watermark
+data and the area where the watermark is to be embedded.
+Specifically, when the binary watermark information of the
+user is fed into the encoder, it generates the watermarked
+latent vector that follows a standard Gaussian distribution.
+Since the initial noise vector is generated based on the
+watermark, subsequent sampling and training processes do not
+affect its distribution, thus preserving the generation quality of
+watermarked images. The watermark decoder D is regarded as
+the inverse operation of E, and its primary aim is to retrieve
+the watermark from the watermarked latent vector.
+When the n-bit random binary watermark w ∈ {0, 1}
+n
+,
+representing the identity information of the user, is input
+into E, a watermarked latent vector zT ∈ R
+C×H×W is gotten.
+Here, C stands for the value of channels, H stands for the
+height value, and W stands for the width value within the
+latent space. As shown in Fig. 3, E is composed of four
+pairs of combination layers, containing a convolutional layer,
+a batch normalization layer, and a ReLU layer. The following
+are two separate linear layers to obtain the mean vector and the
+variance vector, respectively. Finally, zT is derived through the
+reparameterization operation on these two vectors. To calculate
+the loss between the standard latent vector distribution and
+the watermarked latent vector distribution, Kullback–Leibler
+(KL) divergence is adopted, which can assess the deviation
+of the obtained probability distribution from the expected
+probability distribution. The normal distribution is represented
+as q ∼ N(0, 1), and the watermarked latent vector zT follows
+the distribution, denoted as p ∼ N(µ, σ2
+). The corresponding
+Fig. 3. Network structure of watermark encoder E, watermark decoder D,
+and watermark extractor Dext.
+distribution loss is given by the following equation:
+Ld = KL (pkq) = −
+1
+2
+×
+
+2 logσ + 1 − σ
+2 − µ
+2
+
+. (2)
+To ensure that the encoded watermarked latent vector truly
+conforms to a standard Gaussian distribution, the KL divergence loss in (2) is employed as a regularization term to
+penalize deviations from N(0, 1). In practice, this encourages
+the mean µ to approach zero and the variance σ
+2
+to approach
+one for each latent dimension, thus aligning the watermarked
+latent distribution with the noise prior required by the SDM.
+Then, the watermarked latent vector zT is input into the
+watermark decoder D. As presented in Fig. 3, D is made up
+of a linear layer, four pairs of combined layers, consisting
+of a transposed convolutional layer, a batch normalization
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+LUO et al.: FLEXIBLE AND LIGHTWEIGHT WATERMARKING FRAMEWORK FOR SDMs 13955
+layer, and a ReLU layer, a convolutional layer, and a fully
+connected layer, which is the function of sigmoid(·). Finally,
+the watermark wo is reconstructed. The reconstruction loss Lr
+is computed by leveraging the mean square error (mse) loss,
+which is determined by comparing the original watermark w
+with the reconstructed watermark wo, and the corresponding
+equation is defined as follows:
+Lr = MSE (wo,w) . (3)
+In these two loss functions, Lr ensures the correct decoding
+of watermark information, while Ld preserves the original
+Gaussian distribution of the latent vector, thus maintaining the
+fidelity of the watermarked images. The watermark encoder E
+and decoder D are jointly trained by minimizing the following
+total loss function:
+Lw = λ1Ld + λ2Lr (4)
+where λ1 and λ2 represent the proportional constant parameters, respectively. Therefore, the pretrained watermark encoder
+E can embed watermark information into the latent vector that
+approximately follows a standard Gaussian distribution. Meanwhile, the pretrained watermark decoder D can be considered
+as the reverse operation of the encoder, serving the purpose
+of watermark decoding.
+D. Fine-Tuning Stage for Watermark Embedding and
+Extraction
+Based on the pretrained watermark encoder E and the
+fixed text-to-image diffusion model G, whose parameters are
+frozen, the original watermark w is transformed into the latent
+vector zT . Through the iterative denoising process with the
+UNet, the semantic information from the input text prompt
+is also incorporated into zT , resulting in the latent vector zo.
+Subsequently, zo is fed into VAE decoder of G, and then, the
+generated image Iw is embedded with a watermark.
+Following the insight of [37], our designed approach
+embeds the watermarks into the initial latent space, thereby
+achieving inherent robustness against common image processing attacks. In this manner, a dedicated distortion layer is no
+longer required during the fine-tuning stage. There are two
+steps that are integral to the watermark extraction process.
+In the first step, a universal watermark extractor Dext across
+SDM V1/V2 variants is trained. The trained extractor Dext can
+retrieve the watermark feature from the watermarked image
+Iw and get the watermarked latent vector z
+0
+T
+. Dext accepts the
+watermarked generated image Iw as the input. The core of
+this step is to restore the similar latent variable as the original
+watermarked latent vector zT , and Dext needs to achieve the
+functions of the VAE encoder and DDIM inversion process.
+This designed operation recovers watermark information from
+the acquired image, allowing for ownership verification and
+user traceability without relying on the original SDM modules.
+The network structure of Dext is displayed in Fig. 3. Along
+with a convolutional layer and a linear layer, Dext includes a
+Transformer encoder with two layers and one head, an MLP
+module consisting of a linear layer, a ReLU layer, and a linear
+layer, and finally a convolution layer. In the training stage,
+the watermark extractor’s parameters are initialized using
+the default method and the corresponding training objective
+function is formulated as follows:
+Lext = MSE
+z
+0
+T
+,zT
+
+(5)
+The second step is to fine-tune the pretrained watermark
+decoder D to enhance the ability to decode the concrete
+watermark content from the extracted watermarked latent
+vector z
+∗
+T when the parameters of Dext are frozen. Due to the
+possible offsets in the watermark decoding region caused by
+the watermark extractor module and possible image modifications, this step is to improve the accuracy of the watermark
+decoding process and the robustness of the watermark decoder.
+The corresponding training objective function is
+Ldec = MSE (wd,w) . (6)
+where wd is the decoded binary watermark content.
+During the inference phase, when the user S M submits a
+query, the random and specific binary watermark wM from
+the watermark set W = {w1,w2, . . . ,wM} is linked to this user
+exclusively. After the image Iw is generated based on the text
+prompt and the watermarked latent vector zT encoded by E,
+the final decoded watermark wd can be obtained through the
+watermark extractor Dext and the watermark decoder Ddec.
+To conduct a thorough evaluation of the effectiveness of
+the proposed SDM watermarking scheme, two metrics are
+adopted for two detection tasks. The true positive rate at a
+0.01 false positive rate (TPR@0.01FPR) serves to precisely
+measure the performance of the identification task. As for the
+traceability task, bit accuracy (BitAcc) is selected. Specifically,
+TPR@0.01FPR is defined as the identification accuracy using
+a threshold τ, where the theoretical FPR is below 0.01. It
+is assumed that the matching or mismatching of each bit
+between the injected and extracted messages follows an i.i.d.
+Bernoulli distribution with a parameter of 0.5. When the count
+of matching bits between the decoder watermark wd and the
+candidate watermark wj
+is over the threshold τ, it indicates
+that this image Iw contains a watermark and is generated by
+the generative model. For example, the threshold for 48 bits is
+set at 33 bits. BitAcc is the percentage of correctly extracted
+bits. This generated image Iw is assigned to user S M, whose
+watermark wM shows the highest similarity to wd and the
+matching equation is defined as follows:
+ts = arg maxj=1,...,M Fmat
+wd,wj
+
+(7)
+where Fmat represents the number of matching bits.
+Algorithm 1 shows the fine-tuning phase for watermark
+embedding and extraction, where the loss function Lext is
+employed to train Dext in the first step, and the loss function
+Ldec is used to fine-tune the pretrained D to yield the fine-tuned
+decoder Ddec in the second step.
+IV. EXPERIMENT RESULTS AND ANALYSES
+In this section, the performance of the proposed SDM
+watermarking scheme is evaluated in light of various indicators. The detailed experiment setup is outlined in Section
+Section IV-A. Section IV-B displays fidelity results across
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+13956 IEEE INTERNET OF THINGS JOURNAL, VOL. 13, NO. 7, 1 APRIL 2026
+Algorithm 1 Fine-Tuning Procedure for Watermark Embedding and Extraction
+Inputs: The pre-trained watermark encoder E and decoder
+D, number of training epochs epoch1
+and epoch2
+, a
+pre-trained SDM Go, random original watermark w, text
+prompt t, learning rate η, mini-batch size m and a constant
+ε for Adam optimizer
+Outputs: A trained watermark extractor Dext, a fine-tuned
+watermark decoder Ddec
+1: First step:
+2: Initialize the parameters of Dext
+3: for i = 0 : epoch1 do
+4: A watermarked latent vector zT is obtained by E
+based on w
+5: A watermarked image Iw is generated by Go based
+on zT and t
+6: A latent vector z
+0
+T
+is restored by Dext from the
+watermarked image Iw
+7: Compute loss: Lext = MSE(z
+0
+T
+,zT )
+8: Update parameters of Dext using Adam optimizer:
+Dext ← Adam
+∇D
+1
+m
+Pm
+k=1
+L
+k
+ext, η, ε
+9: end for
+10: Return the trained extractor Dext
+11: Second step:
+12: Freeze the parameters of Dext and set the parameters of
+D trainable
+13: for j = 0 : epoch2 do
+14: Same as lines 4-5
+15: A latent vector z
+∗
+T
+is restored by Dext from the
+watermarked image Iw
+16: The watermark wd is decoded by D from the latent
+vector z
+∗
+T
+17: Compute loss: Ldec = MSE(wd,w)
+18: Update parameters of D using Adam optimizer:
+D ← Adam
+∇D
+1
+m
+Pm
+k=1
+L
+k
+dec, η, ε
+19: end for
+20: Return the fine-tuned decoder Ddec
+different datasets and watermark capacities, focusing on
+semantic consistency and image quality. The evaluation on
+latent distribution preservation is illustrated in Section IV-C.
+Robustness assessments against various attacks are shown
+in Section IV-D. Section IV-E analyzes the security of the
+scheme. The performance of the watermark extractor in the
+IoT deployment is presented in Section IV-F. In Section IV-G,
+the comparative results are presented. Section IV-H further
+explores the generalization of the method on the untrained
+SDM versions, different inference steps, and diverse guidance
+scales.
+A. Experimental Setup
+1) SDMs and Datasets: The pretrained text-to-image diffusion models are employed in the experiments, including four
+kinds of versions: V1.4, V1.5, V2.0, and V2.1, which are
+provided by HuggingFace. During the training phase, SDM
+V2.1 and the dataset Stable-Diffusion-Prompts are adopted to
+train the watermark extractor Dext and the watermark decoder
+Fig. 4. Attacked watermarked generated images. (a) Brightness, factor = 3.
+(b) Contrast, factor = 2. (c) Gaussian noise, µ1 = 0 and σ1 = 0.05. (d) JPEG
+compression, QF = 50. (e) Median filter, k = 5. (f) Gaussian blur, k = 3.
+(g) Resize, factor = 0.9. (h) BM3D denoising, sigma psd = 10.
+Ddec. DPMSolver is used for sampling with a step count of
+25. In the inference phase, SDM V1.4, V1.5, V2.0, and V2.1
+are directly used to evaluate the generality of the watermarking
+scheme. The test datasets consist of Stable-Diffusion-Prompts,
+MS-COCO 2017, and Diffusion DB, which are also suitable
+for evaluating the performance of the watermarking scheme.
+What is more, 1000 prompts are randomly selected and tested
+from the corresponding datasets.
+2) Attacks: To assess the robustness of this watermarking
+method, we evaluate it against eight representative traditional
+image processing attacks. These attacks target the image
+content, simulating common, unintentional postprocessing
+manipulations. The resulting attacked watermarked images are
+depicted in Fig. 4. The specific attacks with fixed degrees are
+as follows.
+1) Adjustments in brightness with a factor of 3.
+2) Adjustments in contrast with a factor of 2.
+3) Gaussian noise with a standard deviation of 0.05.
+4) JPEG compression with a quality factor of 50.
+5) Median filter with a kernel size of 5.
+6) Gaussian blur with a kernel size of 3.
+7) Resize with a scaling factor of 0.9.
+8) BM3D denoising algorithm with peak signal-to-noise
+ratio standard deviation of 10.
+Robustness experiments are also conducted on the watermarked images after different intensity image processing
+attacks. What is more, to provide a more comprehensive evaluation, more advanced attacks are tested, including generative
+attacks targeting the embedded watermark and model editing
+attacks targeting the generative model itself.
+3) Evaluation Metrics: To examine the impact of watermark embedding on the generated images, the fidelity of
+these images is imperative to assess, including image quality and semantic consistency. For the first purpose, one
+reference-based metric, Frechet inception distance (FID), and ´
+two no-reference metrics, the natural image quality evaluator
+(NIQE) score [42] and the perception-based image quality
+evaluator (PIQE) score [43], are employed. FID measures the
+distribution divergence between 1000 nonwatermarked images
+and 1000 watermarked ones, both generated using the same
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+LUO et al.: FLEXIBLE AND LIGHTWEIGHT WATERMARKING FRAMEWORK FOR SDMs 13957
+TABLE I
+EVALUATION ON SEMANTIC CONSISTENCY AND IMAGE QUALITY, AND
+WATERMARK EXTRACTION PERFORMANCE WITHOUT ATTACKS
+prompts sourced from three datasets. NIQE and PIQE evaluate
+perceptual quality based on natural image statistics and human
+vision models, respectively. Image quality is evaluated on the
+watermarked images that are not subjected to any attacks.
+To evaluate semantic consistency, the contrastive languageimage pretraining (CLIP) metric [44] is utilized. This metric
+evaluates the alignment between the watermarked images and
+the text prompt, thereby quantifying the effect of watermark
+embedding on the generative fidelity of the SDM. For an
+effective watermarked SDM, the generated images need to
+maintain a high degree of consistency with the input semantic
+information, namely the text prompt. Furthermore, to test the
+corresponding capability in ownership identification and user
+traceability tasks, TPR@0.01FPR and BitAcc are adopted,
+respectively, both computed based on the decoded watermark
+information.
+4) Experiment Settings: All the experiments are carried out
+with the PyTorch framework, and the selected equipment is a
+single RTX 3090 GPU. The size of the Gaussian noise vector
+is 4 × 64 × 64, and the size of the generated image is 3×
+512 × 512. In the training phase, the watermark extractor Dext
+and the watermark decoder Ddec are trained using the Adam
+optimizer with a learning rate of 1e−5
+and a batch size of 2.
+Both λ1 and λ2 are set to 1.
+B. Fidelity Evaluation on Semantic Consistency and Image
+Quality
+In Table I, the fidelity of the proposed watermarking scheme
+on image quality and semantic consistency is presented across
+three datasets and three watermark capacities. All the experiments are conducted on the SDM V2.1 with 25 inference steps
+at the guidance scale of 7.5. It is observed that increasing the
+watermark capacity does not lead to any notable changes in
+CLIP, FID, PIQE, and NIQE scores within the same dataset.
+Specifically, for the results on the Stable-Diffusion-Prompts
+dataset, FID values are approximately 25, PIQE values are
+approximately 30, and NIQE values are approximately 5.
+These findings mean that the generated images perform well
+in image quality, even if the watermark is embedded. What
+is more, CLIP values are higher than 0.3500, denoting strong
+semantic consistency between the watermarked images and
+TABLE II
+EVALUATION ON LATENT DISTRIBUTION PRESERVATION
+their corresponding input text prompts. These observations
+suggest the designed watermark embedding strategy does not
+significantly modify the original SDM, which can be inferred
+to mean the fidelity of the scheme remains well. Although
+the model is trained on the Stable-Diffusion-Prompts dataset,
+its performance exhibits only a slight decline when evaluated
+on unseen datasets such as MS-COCO 2017 and Diffusion
+DB. This further demonstrates the generalization ability of the
+designed watermarking scheme across different datasets.
+C. Evaluation on Latent Distribution Preservation
+To assess whether the watermarked initial vector aligns
+with the standard Gaussian distribution, a collection of 5000
+initial latent vectors embedded with a fixed 48-bit watermark
+is generated with the watermark embedding method. The
+global mean and the standard deviation of these watermarked
+latent vectors are computed, and three widely used normality
+tests are performed: the D’Agostino’s K-squared test, the
+Kolmogorov–Smirnov (KS) test, and the Jarque–Bera test.
+Specifically, D’Agostino’s K-squared and Jarque–Bera tests
+evaluate skewness and kurtosis, and the KS test measures the
+maximum deviation between empirical and theoretical cumulative distributions. As shown in Table II, the statistical analysis
+demonstrates that the watermarked latent vectors closely follow a standard Gaussian distribution. In particular, the global
+mean and standard deviation are nearly ideal, and the majority
+of latent dimensions pass three standard normality tests. Moreover, the distance-based metric, Wasserstein distance, indicates
+extremely high distributional similarity. Overall, these findings
+provide strong evidence that the pretrained watermark encoder
+successfully embeds watermark information while preserving
+the Gaussian property of the initial latent vectors, thereby
+maintaining the quality of generated images.
+D. Robustness Evaluation Against Various Attacks
+Based on the obtained extracted watermark information
+from the watermarked generated images without suffering
+attacks, Table I displays the corresponding TPR@0.01FPR
+values, along with BitAcc values. The TPR@0.01FPR value
+is sufficiently high at 0.999, indicating that the quality of
+the decoded watermark information is excellent and can be
+used to distinguish between watermarked generated images
+and nonwatermarked images to verify the ownership of SDM.
+What is more, the corresponding BitAcc value is 0.8125 when
+the validation dataset is the Stable-Diffusion-Prompts dataset
+and the watermark capacity is 48-bit. This extraction quality
+of the embedded binary watermark is sufficient to achieve user
+traceability, illustrating that the jointly designed watermark
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+13958 IEEE INTERNET OF THINGS JOURNAL, VOL. 13, NO. 7, 1 APRIL 2026
+Fig. 5. BitAcc and TPR@0.01FPR values of the designed watermarking scheme on three kinds of datasets (data 1: Stable-Diffusion-Prompts; data 2:
+MS-COCO 2017; data 3: diffusion DB) under different degrees of image processing attacks. (a) Brightness adjustment. (b) Contrast adjustment. (c) Gaussian
+noise. (d) Median filter. (e) JPEG compression. (f) Gaussian blur. (g) BM3D denoising. (h) Resize.
+TABLE III
+ROBUSTNESS EVALUATION AGAINST FIXED DEGREE IMAGE PROCESSING ATTACKS (BITACC/TPR@0.01FPR)
+extractor and decoder perform effectively without the DDIM
+inversion process.
+Taking into account the fixed-degree image processing
+attacks depicted in Fig. 4, the corresponding watermark
+extraction performance with a 48-bit watermark is shown
+in Table III. It can be observed that the reductions in the
+average BitAcc and TPR@0.01FPR values under different
+validation datasets are minor and remain within an acceptable
+range. Specifically, when the dataset is Stable-DiffusionPrompts, the former decreased by approximately 0.04, while
+the latter decreased by almost 0.07. The overall results mean
+that the watermarked generated images can defend against
+such attacks and can reliably support both model ownership
+verification and user traceability. Furthermore, the robustness
+of the designed SDM watermarking scheme under varying
+degrees of image processing attacks is further analyzed. The
+corresponding results are displayed in Fig. 5, where both
+BitAcc and TPR@0.01FPR values decrease as the attack intensity increases. However, it is found that the TPR@0.01FPR
+values are higher than 0.7000 even if all the tested attacks
+are at the maximum level. Moreover, under these tested attack
+intensities, most of the BitAcc values are above 0.7400. These
+findings clearly demonstrate that the proposed method, which
+embeds the watermark into the initial latent space, offers
+sufficient resilience against various levels of image processing
+attacks.
+In addition to the traditional image processing attacks
+discussed above, a recent study [45] has highlighted the
+increasing importance of developing watermarking methods
+that can withstand the generative attacks. These attacks, typically implemented through generative models, aim to remove
+watermarks by maintaining semantic fidelity while iteratively
+injecting noise and reconstructing images to recover visually
+similar but watermark-free versions. To comprehensively evaluate the robustness of the proposed watermarking scheme,
+three types of generative attacks are applied, including two
+VAE-based methods (Bmshj18 [46], Cheng20 [47]) and one
+diffusion-based method (Zhao23 [48]). The corresponding
+results, showing both BitAcc and TPR@0.01FPR values for
+a 48-bit watermark on the Stable-Diffusion-Prompts dataset,
+are presented in Fig. 6. It can be found that the extraction
+performance gradually decreases with increasing attack intensity. Nevertheless, all the BitAcc values remain above 0.7240,
+indicating that the watermark stability is largely preserved even
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+LUO et al.: FLEXIBLE AND LIGHTWEIGHT WATERMARKING FRAMEWORK FOR SDMs 13959
+Fig. 6. BitAcc and TPR@0.01FPR values of the proposed watermarking scheme on the 48-bit embedded watermark and the Stable-Diffusion-Prompts dataset
+under three types of generative attacks. (a) VAE-based attack (Bmshj18 [46]), (b) VAE-based attack (Cheng20 [47]), and (c) diffusion-based attack (Zhao23
+[48]) with varying intensities.
+TABLE IV
+WATERMARK EXTRACTION PERFORMANCE OF THE PROPOSED SCHEME
+UNDER MODEL EDITING ATTACKS ON TWO FINE-TUNED SDMS
+under strong generative perturbations. Notably, even under
+extreme conditions, such as a VAE attack with a quality rate
+of 2 or a diffusion-based attack with 120 denoised steps,
+the proposed method maintains stable extraction performance,
+which demonstrates excellent robustness. This resilience can
+be attributed to the design of embedding the watermark
+within the latent space, where the semantic information and
+primary latent representations of the reconstructed images
+remain largely consistent throughout the iterative corruptionrestoration process and the watermark information is not easily
+removed by reconstruction.
+A more practical and important scenario involving model
+editing attacks is further investigated, where the watermarked
+SDM is fine-tuned on a domain-specific dataset to alter
+the visual characteristics of its generated images. To evaluate the robustness of the proposed watermarking scheme in
+this setting, two fine-tuned SDMs are employed: AnythingV4.0 (an anime-style model based on SDM V1.5) and
+SDM V2.1-realistic (a photorealistic model based on SDM
+V2.1). The experimental results are summarized in Table IV.
+It can be observed that the watermark extraction performance
+remains highly stable across both edited models. Specifically,
+the BitAcc values stay above 0.7610 and the TPR@0.01FPR
+values exceed 0.985 across both fine-tuned variants, indicating
+that the designed watermark extractor and decoder maintain
+reliable watermark detectability even after the domain-specific
+fine-tuning. This robustness can be attributed to the embedding
+Fig. 7. Image quality of the generated images after the collusion attacks with
+varying numbers of colluders.
+of the watermark into the SDM’s initial latent space, which
+captures high-level semantic representations that remain consistent across different generation domains. Moreover, the joint
+training of the watermark extractor and decoder enables effective decoding from these semantically aligned features rather
+than from domain-dependent pixel statistics. Consequently,
+the proposed method exhibits strong resistance to model
+editing attacks and ensures dependable ownership verification
+regardless of downstream model adaptation.
+E. Security Analysis
+Beyond empirical robustness, a comprehensive evaluation
+of a watermarking scheme requires an analysis of its security
+against advanced attacks. We therefore evaluate our method’s
+resilience against the collusion attacks where multiple colluders average their respective user-specific watermarked initial
+latent vectors to cancel out or weaken the watermark signal.
+To measure the performance of our scheme under this attack,
+we simulate the attack with varying numbers of colluders,
+assessing both watermark extraction and image quality. As
+shown in Fig. 7, the attack is indeed effective at removing
+the watermark, with the BitAcc values consistently hovering
+around 0.5, which indicates a random guess. However, this
+watermark removal comes at a steep cost to image quality.
+The results reveal two critical findings. First, the severity of
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+13960 IEEE INTERNET OF THINGS JOURNAL, VOL. 13, NO. 7, 1 APRIL 2026
+TABLE V
+COMPARATIVE RESULTS OF GENERATION QUALITY, EXTRACTION PERFORMANCE WITHOUT ATTACKS, AND COMPUTATIONAL EFFICIENCY AMONG
+DIFFERENT WATERMARKING METHODS
+quality degradation is inversely proportional to the number
+of colluders: attacks with fewer participants yield images of
+significantly lower quality. Second, and more importantly, even
+under the maximum testing number of colluders, the quality
+of the colluded images remains substantially inferior to that
+of legitimately watermarked images. These findings prove
+that our scheme forces a prohibitive tradeoff on attackers.
+While they can successfully disrupt the watermark, the process
+irreparably damages the image, rendering it perceptually poor
+and semantically inconsistent. This makes the collusion attacks
+pragmatically ineffective, confirming the security of the watermarking method, which injects the watermark information into
+the latent space.
+A critical aspect of any watermarking system’s security
+is its resilience to the potential leakage of keys. While
+our system does not use a traditional cryptographic key,
+the watermark extractor Dext functions as the private key.
+Comprising a specific architecture and trained weights, Dext
+is the only component capable of efficiently extracting the
+watermark message from the images. Therefore, its security is
+paramount. An attack scene is considered, where the attacker
+has obtained one or more public watermarked images and aims
+to recover the embedded message without access to Dext. Then,
+the security of the watermark hinges on the computational
+intractability of reversing the generative process. The entire
+pipeline, which maps a low-dimensional binary message to a
+high-dimensional image, acts as a complex one-way function.
+Reversing this process is computationally infeasible, meaning
+that the watermark is computationally secure within the public
+image. However, the security of the entire system is ultimately contingent upon protecting Dext. While the embedded
+watermark is secure against external attacks, its confidentiality is only guaranteed if the extractor remains confidential,
+accessible solely to the authorized regulatory department for
+verification. In the event that the extractor Dext is to be leaked,
+the scheme’s security would be fundamentally compromised.
+An attacker possessing Dext would gain the ability to read
+the watermark from any corresponding image, thereby nullifying its confidentiality. This underscores that the protection
+of the extractor is the cornerstone of the system’s security
+architecture. To further fortify the extractor, we can implement
+a cryptographic control: requiring a unique, time-sensitive
+session key for each verification. This acts as a second factor of
+authentication, rendering a stolen, static extractor file useless
+on its own.
+F. Comparative Experiments
+Existing initial-noise-modification-based SDM watermarking schemes extract the watermark information by transforming the watermarked generated image into the latent vector of
+the watermark, leveraging the VAE encoder and the DDIM
+inversion process. Examples of such schemes include TreeRing [15], Gaussian shading [16], and DiffuseTrace [17].
+In contrast, the proposed SDM watermarking in this article,
+which is based on the designed watermark extractor, recovers
+the watermarked latent vector and the watermark decoder to
+decode the watermark information without the use of the
+DDIM inversion process.
+In practical application scenarios, the shorter the watermark
+extraction time, the more applicable the proposed watermarking method becomes. To evaluate this aspect, the comparative
+experiments are conducted considering the watermark extraction time and the parameter size of the watermark extractor
+module, and the obtained results are depicted in Table V. All
+comparative schemes, except for Tree-Ring, due to design limitations, embed a watermark capacity of 48 bits. The extraction
+time is calculated based on the process from the watermarked
+generated images and the recovered watermarked latent vector
+fairly. For each scheme, 1000 images are generated by the
+watermarked SDMs, and the average time is obtained to
+represent the extraction time. It is evident that the extraction
+time associated with the proposed watermarking scheme is
+considerably reduced, and the parameters related to the watermark extractor module are quite low. Other schemes extract the
+watermark information based on the DDIM inversion module,
+which is equivalent to the diffusion model as a watermark
+extractor. Although this type of design concept can utilize the
+reversible nature of DDIM inversion to extract watermarks, it
+inevitably leads to a relatively large model size and a longer
+running time. Conversely, our designed watermark extractor
+based on the Transformer and MLP framework outperforms
+these comparative watermarking schemes in terms of computational efficiency.
+To further validate the architectural advantages of our
+designed watermark extractor, a ResNet18-based watermark
+extractor is additionally implemented and trained to realize the
+same watermark extraction task. Both models are trained under
+identical settings, using the same number of watermarked
+images and loss objectives, to ensure fair comparison. The
+corresponding results on the extraction performance and the
+extraction time are shown in Table V. Although the extraction
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+LUO et al.: FLEXIBLE AND LIGHTWEIGHT WATERMARKING FRAMEWORK FOR SDMs 13961
+TABLE VI
+COMPARATIVE RESULTS ON ROBUSTNESS EVALUATION AGAINST FIXED DEGREE IMAGE PROCESSING ATTACKS (BITACC/TPR@0.01FPR)
+time of the ResNet18-based watermark extractor is slightly
+shorter, it requires a larger number of parameters and yields
+a lower BitAcc value. In contrast, our adopted watermark
+extractor, based on the Transformer and MLP architecture,
+achieves higher extraction accuracy with a smaller parameter
+size, despite a slightly longer extraction time. This performance gain can be attributed to the architectural strengths
+of the Transformer framework. Unlike convolutional networks
+such as the tested ResNet18, which rely on localized receptive
+fields and fixed kernel operations, the Transformer employs
+self-attention mechanisms that enable dynamic, global feature
+aggregation. This capability is particularly advantageous in
+recovering the watermarked latent vector from the generated
+image, where the embedded watermark may induce subtle,
+nonlocal perturbations across spatial locations and feature
+dimensions in the latent space. By modeling long-range
+dependencies and global context, the Transformer is more
+effective at capturing these dispersed watermark signals, which
+might be overlooked by purely convolutional architectures.
+Moreover, the inclusion of the MLP head further improves
+the extractor module’s nonlinear representational capacity,
+allowing it to refine the recovered latent features into a more
+accurate watermarked representation in the latent space. This
+results in a more precise input for the subsequent watermark
+decoder, thereby improving the overall extraction performance.
+The Transformer and MLP architecture thus offers a flexible
+and expressive recovery pipeline that can better capture the
+distributional changes induced by the watermark during the
+generation process of SDM. This hierarchical feature refinement ensures that the extracted latent vector is more closely
+aligned with the true watermarked distribution, which facilitates more accurate decoding in the downstream watermark
+decoder. Thus, our method strikes a better balance between
+model size and extraction reliability, making it more suitable
+for lightweight deployment scenarios where watermark extraction accuracy and parameter efficiency are prioritized.
+Furthermore, the comparative experimental results on
+fidelity and watermark extraction are displayed in Table V.
+The results indicate that the designed watermarking scheme
+has a relatively minor impact on the original SDM model.
+In terms of fidelity, it is on par with Gaussian shading [16]
+and DiffuseTrace [17], both of which maintain the Gaussian
+distribution when injecting the watermark into the initial noise
+vector. What is more, the TPR@0.01FPR value is 0.999,
+which performs well in the identification task. Although the
+BitAcc value of 0.8125 is lower than 0.9811, the proposed
+watermarking scheme has distinct advantages. It features a
+significantly shorter watermark extraction time and employs a
+flexible watermark extractor module that can directly recover
+the watermark information from the detected watermarked
+image, outperforming the comparative schemes. Moreover, the
+BitAcc value is still acceptable for fulfilling the traceability
+task. Table VI represents the comparative test results on the
+destructive attacks and constructive attack in the fixed degrees.
+For the average value in the destructive attacks, it can be
+observed that the magnitude of the decrease in the BitAcc
+value of the proposed scheme is about 0.04, which is less
+than 0.06 of DiffuseTrace [17]. This means that the designed
+watermark extractor module with the watermark decoder performs robustly enough to defend against destructive attacks
+and maintains the ability of the watermark extraction process.
+G. Performance of Watermark Extractor in the IoT
+Deployment
+To precisely assess our watermark extractor’s performance in a multiple IoT devices concurrence scenario,
+an industry-grade discrete-event simulation system is constructed. The watermark extraction service is deployed on a
+Gunicorn+FastAPI server stack with four worker processes.
+Client-side behavior is simulated using the Locust framework,
+emulating a varying number of concurrent IoT devices whose
+request arrivals follow a Poisson process to realistically model
+random event streams. To mitigate potential I/O bottlenecks
+during testing, each virtual device requests verification for
+watermarked images randomly selected from a pre-generated
+pool of 10 000. The average BitAcc value, system throughput
+(images/s), P95 latency, and P99 latency are measured across
+various concurrence levels under the 48-bit watermark length.
+The results, illustrated in Fig. 8, are compelling: even under the
+tested highest load of 1200 concurrent IoT devices, the system
+maintained both the P99 latency and the P99 latency under
+500 ms. Furthermore, the average BitAcc value is 0.8096,
+which aligns with the original level. The system achieves a
+throughput of 500 images/s, demonstrating its capability to
+handle large-scale, real-time IoT verification tasks.
+Recognizing that practical applications have varying data
+capacity requirements, we evaluate the system’s performance
+across three distinct watermark lengths (16, 24, and 48 bits)
+under a sustained load of 500 concurrent IoT devices.
+Throughout these tests, the BitAcc values remain at a consistent level as the ones in Table I. As illustrated in Fig. 9, the
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+13962 IEEE INTERNET OF THINGS JOURNAL, VOL. 13, NO. 7, 1 APRIL 2026
+Fig. 8. Performance of the watermark extractor under different numbers of
+IoT devices concurrence.
+Fig. 9. Performance of the watermark extractor under various watermark
+lengths in the IoT scenario.
+increase in watermark length has a negligible impact on extraction latency and throughput. This is because our extractor
+model is a single forward-pass process, and its computational
+complexity is mainly independent of the output bit length. This
+characteristic demonstrates our solution’s excellent flexibility,
+which allows users to flexibly choose the required watermark
+capacity for their specific application without incurring a
+performance penalty.
+H. Ablation Study
+In this section, three key factors involved in the generation
+process for SDM are explored, including the SDM versions,
+the inference steps, and the guidance scales. We then quantitatively analyze their impacts on the performance of both the
+watermark embedding and watermark extraction phases.
+1) SDM Versions: The adopted SDM version may vary and
+be updated with technological advancements. In this section,
+the proposed SDM watermarking scheme is evaluated on
+SDM V1.4, V1.5, and V2.0, which are not used during the
+training phase, and the corresponding results are displayed in
+Table VII. The fidelity of the watermarked image and the effectiveness of watermark extraction are still excellent. It means
+that this trained watermark extractor exhibits strong generalization capabilities across various SDM V1/V2 variants.
+2) Inference Steps: To assess the influence of inference
+steps, the numbers are adjusted to 10 and 50. Table VIII
+illustrates the corresponding experimental results. As can be
+TABLE VII
+PERFORMANCE OF DIFFERENT SDM VERSIONS
+TABLE VIII
+PERFORMANCE OF DIFFERENT INFERENCE STEPS
+TABLE IX
+PERFORMANCE OF DIFFERENT GUIDANCE SCALES
+observed, an increase of the inference steps can enhance the
+quality of the watermarked images in terms of the NIQE
+value. Although the performance of the method has slightly
+decreased in PIQE value, it does not have a detrimental effect
+on the watermark extraction.
+3) Guidance Scales: Table IX represents the corresponding generation quality and watermark extraction performance
+under different guidance scales. With the increase in the guidance scale, the quality of the watermarked images decreases
+in terms of PIQE value, but their semantic consistency is
+enhanced. What is more, the ability to extract watermarks
+is well-maintained. It indicates that the guidance scale has
+a slight impact on the generation quality but does not affect
+the watermark extraction quality.
+Authorized licensed use limited to: Biblioteka PWr. Downloaded on April 14,2026 at 07:43:10 UTC from IEEE Xplore. Restrictions apply.
+LUO et al.: FLEXIBLE AND LIGHTWEIGHT WATERMARKING FRAMEWORK FOR SDMs 13963
+V. CONCLUSION
+Based on the initial-noise-modification watermarking strategy, a lightweight watermark extractor module built upon the
+Transformer and MLP framework is specifically designed to
+straightforwardly recover watermark information from generated images without relying on the DDIM inversion step.
+By eliminating the dependence on the original SDM, the
+proposed architecture significantly improves deployment flexibility, particularly in scenarios where the identical diffusion
+model may not be accessible when extracting the watermark.
+What is more, the watermark extractor and decoder are
+jointly performed on the watermarked image to retrieve the
+embedded watermark. Experimental results confirm the effectiveness in ensuring high visual quality of generated images
+while enabling reliable watermark extraction for robust copyright verification and user traceability. Although the proposed
+method exhibits strong robustness against diverse attacks,
+it remains less effective under adversarial perturbations. In
+future work, we aim to enhance the method’s capabilities on
+two fronts: first, by improving its resistance to adversarial
+perturbations through robust training strategies, and second,
+by investigating its universality across models with different
+architectural backbones.
