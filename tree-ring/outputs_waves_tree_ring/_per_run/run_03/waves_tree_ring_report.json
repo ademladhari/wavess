@@ -1,0 +1,47 @@
+{
+  "mode": "WAVES-style Tree-Ring benchmark",
+  "clean_similarity": 1e-12,
+  "num_attacks": 26,
+  "excluded_attacks": [
+    "4x_regen_kl_vae",
+    "adv_cls_wm1_wm2_0.04_200_warm",
+    "kl_vae"
+  ],
+  "parameters": {
+    "model_id": "sd2-community/stable-diffusion-2-1-base",
+    "prompt": "A detailed photo of a mountain lake at sunrise.",
+    "run_index": 3,
+    "runs": 5,
+    "seed": 44,
+    "device": "cuda",
+    "dtype": "float16",
+    "num_inference_steps": 50,
+    "num_inversion_steps": 50,
+    "guidance_scale": 7.5,
+    "radius": 10,
+    "key_variant": "rand",
+    "channels": 4,
+    "height": 64,
+    "width": 64,
+    "threshold": 8.0,
+    "alpha": 0.01,
+    "variance_estimation": "outside_mask",
+    "pvalue_tail": "lower",
+    "strengths": [
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      1.0
+    ]
+  },
+  "outputs": {
+    "leaderboard_csv": "outputs_waves_tree_ring\\_per_run\\run_03\\waves_tree_ring_leaderboard.csv",
+    "per_strength_csv": "outputs_waves_tree_ring\\_per_run\\run_03\\waves_tree_ring_per_strength.csv"
+  },
+  "notes": [
+    "Tree-Ring score uses 1 - p_value from inversion-based detector (higher is better).",
+    "Generation and inversion use the same SD model family for consistency.",
+    "Distortion attacks come from WAVES distortions module via shared benchmark runner."
+  ]
+}

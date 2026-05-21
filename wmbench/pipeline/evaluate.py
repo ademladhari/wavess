@@ -100,6 +100,19 @@ def run_evaluate_stage(
     profile_metrics: bool = False,
 ) -> None:
     dev = device or (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
+    aesthetics_dev = dev
+    if not skip_aesthetics_metrics:
+        forced_aesth_dev = os.environ.get("WMBENCH_AESTHETICS_DEVICE", "").strip().lower()
+        if forced_aesth_dev:
+            aesthetics_dev = torch.device(forced_aesth_dev)
+        elif os.name == "nt" and dev.type == "cuda":
+            # Keep metrics enabled on Windows while avoiding known native CLIP CUDA load crashes.
+            aesthetics_dev = torch.device("cpu")
+            print(
+                "evaluate: Windows+CUDA detected; loading aesthetics models on CPU for stability "
+                "(override with WMBENCH_AESTHETICS_DEVICE=cuda).",
+                flush=True,
+            )
     attacked_root = os.path.join(work_dir, "attacked")
     scores_root = os.path.join(work_dir, "scores")
     metrics_root = os.path.join(work_dir, "metrics")
@@ -217,7 +230,7 @@ def run_evaluate_stage(
             t_am = time.perf_counter()
             from wmbench.metrics.aesthetics import load_aesthetics_and_artifacts_models
 
-            aesthetics_models = load_aesthetics_and_artifacts_models(device=dev)
+            aesthetics_models = load_aesthetics_and_artifacts_models(device=aesthetics_dev)
             print(f"evaluate: aesthetics models ready in {time.perf_counter() - t_am:.1f}s", flush=True)
         except Exception as exc:
             print(f"evaluate: aesthetics load failed ({exc!r}); aesthetics/artifacts will be NaN.", flush=True)
@@ -355,13 +368,13 @@ def run_evaluate_stage(
                 original_ratings = aesthetics_orig_rating_cache.get(basename_key)
                 if original_ratings is None:
                     original_ratings, _ = compute_aesthetics_and_artifacts_scores(
-                        originals, aesthetics_models, device=dev
+                        originals, aesthetics_models, device=aesthetics_dev
                     )
                     aesthetics_orig_rating_cache[basename_key] = original_ratings
                 row["aesthetics_delta"], row["artifacts"] = compute_aesthetics_delta_and_artifacts(
                     attacked,
                     originals,
-                    device=dev,
+                    device=aesthetics_dev,
                     aesthetics_models=aesthetics_models,
                     original_ratings=original_ratings,
                 )

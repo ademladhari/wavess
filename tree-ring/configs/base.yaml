@@ -1,0 +1,28 @@
+model:
+  model_id: sd2-community/stable-diffusion-2-1-base
+  device: cuda
+  dtype: float16
+  num_inference_steps: 50
+  guidance_scale: 7.5
+
+watermark:
+  radius: 10
+  key_variant: rand
+  seed: 1234
+  channels: 4
+  height: 64
+  width: 64
+
+detection:
+  num_inversion_steps: 50
+  threshold: 8.0
+  alpha: 0.01
+  invert_prompt: ""
+  variance_estimation: outside_mask
+  pvalue_tail: lower
+
+evaluation:
+  output_dir: outputs/eval
+  metrics_json: metrics.json
+  report_md: report.md
+  roc_fpr_target: 0.01

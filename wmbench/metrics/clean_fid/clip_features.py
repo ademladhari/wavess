@@ -1,11 +1,65 @@
 # pip install git+https://github.com/openai/CLIP.git
-import pdb
+import hashlib
+import os
+import urllib.request
+import warnings
 from PIL import Image
 import numpy as np
 import torch
 import torchvision.transforms as transforms
 import clip
 from .fid import compute_fid
+from tqdm import tqdm
+
+
+def _sha256_file(path: str, chunk_size: int = 1024 * 1024) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _download_streaming(url: str, root: str):
+    """
+    Drop-in replacement for clip._download that avoids loading whole model files
+    into RAM for SHA256 checks (prevents MemoryError on Windows).
+    """
+    os.makedirs(root, exist_ok=True)
+    filename = os.path.basename(url)
+    expected_sha256 = url.split("/")[-2]
+    download_target = os.path.join(root, filename)
+
+    if os.path.exists(download_target) and not os.path.isfile(download_target):
+        raise RuntimeError(f"{download_target} exists and is not a regular file")
+
+    if os.path.isfile(download_target):
+        if _sha256_file(download_target) == expected_sha256:
+            return download_target
+        warnings.warn(f"{download_target} exists, but checksum does not match; re-downloading")
+
+    with urllib.request.urlopen(url) as source, open(download_target, "wb") as output:
+        total = source.info().get("Content-Length")
+        total_i = int(total) if total is not None else None
+        with tqdm(total=total_i, ncols=80, unit="iB", unit_scale=True, unit_divisor=1024) as loop:
+            while True:
+                buffer = source.read(8192)
+                if not buffer:
+                    break
+                output.write(buffer)
+                loop.update(len(buffer))
+
+    if _sha256_file(download_target) != expected_sha256:
+        raise RuntimeError("Model downloaded but SHA256 does not match")
+
+    return download_target
+
+
+# Patch CLIP downloader globally for this process.
+clip._download = _download_streaming
 
 
 def img_preprocess_clip(img_np):

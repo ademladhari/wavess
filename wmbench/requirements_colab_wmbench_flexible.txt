@@ -1,5 +1,6 @@
-# wmbench + flexible watermarking (Kaggle / Colab)
+# wmbench + flexible + ssl watermarking (Kaggle / Colab)
 # Flexible code lives at <waves-repo>/flexible/ (auto-detected; override with WMBENCH_FLEXIBLE_ROOT).
+# SSL code can live at <waves-repo>/ssl (or external path via WMBENCH_SSL_ROOT).
 # Install PyTorch with CUDA separately if the runtime lacks a matching build:
 #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 #
@@ -47,6 +48,10 @@ bm3d>=4.0.0
 
 # utility
 pyarrow
+
+# ssl watermarking
+kornia>=0.7.0
+augly>=1.0.0
 
 # CLIP-FID in wmbench evaluate (install if missing):
 # pip install git+https://github.com/openai/CLIP.git

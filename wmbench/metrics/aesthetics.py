@@ -13,7 +13,12 @@ def load_aesthetics_and_artifacts_models(device: torch.device | None = None):
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = CLIPModel.from_pretrained("laion/CLIP-ViT-H-14-laion2B-s32B-b79K")
+    # Windows CUDA can crash in safetensors load path for this model.
+    # Prefer PyTorch bin weights here for stability while staying on GPU.
+    model = CLIPModel.from_pretrained(
+        "laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
+        use_safetensors=False,
+    )
     vision_model = model.vision_model
     # FP16 vision on CUDA only — CPU stays FP32 (correctness + avoids unsupported slow paths).
     if device.type == "cuda":

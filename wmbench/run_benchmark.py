@@ -48,6 +48,7 @@ import os
 import sys
 import time
 import traceback
+from pathlib import Path
 
 # Running `py D:\...\wmbench\run_benchmark.py` puts only `...\wmbench` on sys.path; imports need the parent
 # of that folder (the directory that contains the `wmbench` package).
@@ -55,7 +56,9 @@ _pkg_parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _pkg_parent not in sys.path:
     sys.path.insert(0, _pkg_parent)
 
+import numpy as np
 import torch
+from PIL import Image
 
 from wmbench.attacks.registry import resolve_attacks
 from wmbench.output.plotter import render_all_plots
@@ -94,6 +97,17 @@ def _print_stage_profile(stage: str, dt_s: float, device: torch.device) -> None:
         print(f"profile/{stage}: {dt_s:.1f}s", flush=True)
 
 
+def _generate_synthetic_images(directory: str, *, count: int, size: int, seed: int) -> str:
+    out = Path(directory)
+    out.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(int(seed))
+    for idx in range(int(count)):
+        # Deterministic pseudo-natural negatives/placeholders for generate-based flows.
+        arr = rng.integers(0, 256, size=(int(size), int(size), 3), dtype=np.uint8)
+        Image.fromarray(arr, mode="RGB").save(out / f"{idx:05d}.png")
+    return str(out.resolve())
+
+
 def main(argv: list[str] | None = None) -> int:
     # Dump Python stack on SIGUSR2/Linux; helps diagnose silent native crashes after CUDA loads.
     try:
@@ -106,11 +120,37 @@ def main(argv: list[str] | None = None) -> int:
         "--methods",
         nargs="+",
         required=True,
-        help="dct | dwt | svd | dct-dwt | dwt-dct-svd | flexible",
+        help="dct | dwt | svd | dct-dwt | dwt-dct-svd | flexible | ssl | tree-ring",
     )
-    p.add_argument("--images", required=True, help="Directory of originals (clean host images)")
-    p.add_argument("--negatives", required=True, help="Directory of negative (unwatermarked) images for detection calibration")
+    p.add_argument("--images", required=False, help="Directory of originals (clean host images)")
+    p.add_argument("--negatives", required=False, help="Directory of negative (unwatermarked) images for detection calibration")
     p.add_argument("--output", required=True, help="Results root (work/, csv, plots, anchors)")
+    p.add_argument(
+        "--generate-based",
+        action="store_true",
+        help=(
+            "Generate-mode benchmark: methods that synthesize images can run without --images by creating "
+            "synthetic placeholder images and negatives."
+        ),
+    )
+    p.add_argument(
+        "--generated-count",
+        type=int,
+        default=500,
+        help="Number of synthetic placeholder/negative images to generate when --generate-based is used.",
+    )
+    p.add_argument(
+        "--generated-image-size",
+        type=int,
+        default=512,
+        help="Spatial size (square) for synthetic images in --generate-based mode.",
+    )
+    p.add_argument(
+        "--generated-seed",
+        type=int,
+        default=1234,
+        help="Seed for deterministic synthetic image generation in --generate-based mode.",
+    )
     p.add_argument("--attacks", nargs="*", default=None, help="Subset of attack display names (default: all implemented)")
     p.add_argument(
         "--skiprince4xdiff",
@@ -161,9 +201,51 @@ def main(argv: list[str] | None = None) -> int:
     work_root = os.path.join(out, "work")
     os.makedirs(out, exist_ok=True)
 
-    image_paths = list_image_paths(args.images)
+    generated_inputs_dir: str | None = None
+    generated_negatives_dir: str | None = None
+    if args.generate_based:
+        if not args.blind_detect:
+            print("--generate-based currently requires --blind-detect.", file=sys.stderr)
+            return 2
+        if args.generated_count <= 0:
+            print("--generated-count must be > 0", file=sys.stderr)
+            return 2
+        if args.generated_image_size <= 0:
+            print("--generated-image-size must be > 0", file=sys.stderr)
+            return 2
+        generated_inputs_dir = _generate_synthetic_images(
+            os.path.join(out, "_generated_inputs"),
+            count=args.generated_count,
+            size=args.generated_image_size,
+            seed=args.generated_seed,
+        )
+        image_root = generated_inputs_dir
+        negatives_root = os.path.abspath(args.negatives) if args.negatives else _generate_synthetic_images(
+            os.path.join(out, "_generated_negatives"),
+            count=args.generated_count,
+            size=args.generated_image_size,
+            seed=args.generated_seed + 1,
+        )
+        if not args.negatives:
+            generated_negatives_dir = negatives_root
+        print(
+            f"generate-based mode: using synthetic images at {generated_inputs_dir}"
+            + (f" and negatives at {generated_negatives_dir}" if generated_negatives_dir else ""),
+            flush=True,
+        )
+    else:
+        if not args.images:
+            print("--images is required unless --generate-based is set.", file=sys.stderr)
+            return 2
+        if not args.negatives:
+            print("--negatives is required unless --generate-based is set.", file=sys.stderr)
+            return 2
+        image_root = os.path.abspath(args.images)
+        negatives_root = os.path.abspath(args.negatives)
+
+    image_paths = list_image_paths(image_root)
     if not image_paths:
-        print("No images found under --images", file=sys.stderr)
+        print(f"No images found under --images: {image_root}", file=sys.stderr)
         return 1
 
     device = _resolve_device(args.device.strip().lower() if args.device else "auto")
@@ -230,8 +312,8 @@ def main(argv: list[str] | None = None) -> int:
         run_detect_stage(
             adapter,
             work,
-            os.path.abspath(args.images),
-            os.path.abspath(args.negatives),
+            image_root,
+            negatives_root,
             attack_list,
             strength_map,
             resume=args.resume,
@@ -248,7 +330,7 @@ def main(argv: list[str] | None = None) -> int:
             t0 = time.perf_counter()
             run_evaluate_stage(
                 work,
-                os.path.abspath(args.images),
+                image_root,
                 attack_list,
                 strength_map,
                 output_dir=out,

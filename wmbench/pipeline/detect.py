@@ -48,6 +48,10 @@ def _sidecar_embed_meta(method: str, sidecar: dict) -> dict | None:
         return sidecar.get("svd_payload")
     if method in ("flexible", "flex"):
         return sidecar.get("flexible_payload")
+    if method in ("ssl", "ssl-wm", "ssl_wm"):
+        return sidecar.get("ssl_payload")
+    if method in ("tree-ring", "tree_ring", "treering"):
+        return sidecar.get("tree_ring_payload")
     return None
 
 

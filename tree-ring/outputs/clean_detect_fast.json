@@ -1,0 +1,182 @@
+[
+  {
+    "image_path": "outputs\\clean_fast\\clean_0000.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 58.15816879272461,
+    "p_value": 0.9991690223588725,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0001.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 54.21153259277344,
+    "p_value": 0.08084269711471642,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0002.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 54.42090606689453,
+    "p_value": 0.8502610581802931,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0003.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 58.247215270996094,
+    "p_value": 0.9981931502238153,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0004.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 57.71664810180664,
+    "p_value": 0.9985136115477475,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0005.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 59.01314163208008,
+    "p_value": 0.9999999998748731,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0006.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 55.92226028442383,
+    "p_value": 0.6673034816796309,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0007.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 58.207618713378906,
+    "p_value": 0.9999091490608041,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0008.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 56.586097717285156,
+    "p_value": 0.816662843749409,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0009.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 58.86073684692383,
+    "p_value": 0.9996749625774568,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0010.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 52.12989807128906,
+    "p_value": 7.192649790968083e-05,
+    "detected_by_distance": false,
+    "detected_by_pvalue": true
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0011.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 57.41276550292969,
+    "p_value": 0.9817800401039999,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0012.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 54.96357727050781,
+    "p_value": 0.5250147213548195,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0013.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 55.585693359375,
+    "p_value": 0.8456592152630616,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0014.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 54.929405212402344,
+    "p_value": 0.2528691377512586,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0015.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 57.16035079956055,
+    "p_value": 0.9967940921165876,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0016.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 58.29521942138672,
+    "p_value": 0.9999999798529554,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0017.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 56.88429641723633,
+    "p_value": 0.9739610251225698,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0018.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 57.06132888793945,
+    "p_value": 0.9510306106889456,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  },
+  {
+    "image_path": "outputs\\clean_fast\\clean_0019.png",
+    "watermarked_label": false,
+    "attack": "none",
+    "distance": 56.97559356689453,
+    "p_value": 0.8125704943874023,
+    "detected_by_distance": false,
+    "detected_by_pvalue": false
+  }
+]

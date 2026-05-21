@@ -1,0 +1,262 @@
+[
+  {
+    "index": 0,
+    "prompt": "A photorealistic landscape 0",
+    "image_path": "outputs\\wm_fast\\wm_0000.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1234,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 1,
+    "prompt": "A photorealistic landscape 1",
+    "image_path": "outputs\\wm_fast\\wm_0001.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1235,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 2,
+    "prompt": "A photorealistic landscape 2",
+    "image_path": "outputs\\wm_fast\\wm_0002.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1236,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 3,
+    "prompt": "A photorealistic landscape 3",
+    "image_path": "outputs\\wm_fast\\wm_0003.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1237,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 4,
+    "prompt": "A photorealistic landscape 4",
+    "image_path": "outputs\\wm_fast\\wm_0004.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1238,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 5,
+    "prompt": "A photorealistic landscape 5",
+    "image_path": "outputs\\wm_fast\\wm_0005.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1239,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 6,
+    "prompt": "A photorealistic landscape 6",
+    "image_path": "outputs\\wm_fast\\wm_0006.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1240,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 7,
+    "prompt": "A photorealistic landscape 7",
+    "image_path": "outputs\\wm_fast\\wm_0007.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1241,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 8,
+    "prompt": "A photorealistic landscape 8",
+    "image_path": "outputs\\wm_fast\\wm_0008.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1242,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 9,
+    "prompt": "A photorealistic landscape 9",
+    "image_path": "outputs\\wm_fast\\wm_0009.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1243,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 10,
+    "prompt": "A photorealistic landscape 10",
+    "image_path": "outputs\\wm_fast\\wm_0010.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1244,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 11,
+    "prompt": "A photorealistic landscape 11",
+    "image_path": "outputs\\wm_fast\\wm_0011.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1245,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 12,
+    "prompt": "A photorealistic landscape 12",
+    "image_path": "outputs\\wm_fast\\wm_0012.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1246,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 13,
+    "prompt": "A photorealistic landscape 13",
+    "image_path": "outputs\\wm_fast\\wm_0013.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1247,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 14,
+    "prompt": "A photorealistic landscape 14",
+    "image_path": "outputs\\wm_fast\\wm_0014.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1248,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 15,
+    "prompt": "A photorealistic landscape 15",
+    "image_path": "outputs\\wm_fast\\wm_0015.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1249,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 16,
+    "prompt": "A photorealistic landscape 16",
+    "image_path": "outputs\\wm_fast\\wm_0016.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1250,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 17,
+    "prompt": "A photorealistic landscape 17",
+    "image_path": "outputs\\wm_fast\\wm_0017.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1251,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 18,
+    "prompt": "A photorealistic landscape 18",
+    "image_path": "outputs\\wm_fast\\wm_0018.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1252,
+      "key_variant": "rand"
+    }
+  },
+  {
+    "index": 19,
+    "prompt": "A photorealistic landscape 19",
+    "image_path": "outputs\\wm_fast\\wm_0019.png",
+    "watermarked": true,
+    "metadata": {
+      "model_id": "sd2-community/stable-diffusion-2-1-base",
+      "num_inference_steps": 50,
+      "guidance_scale": 7.5,
+      "seed": 1253,
+      "key_variant": "rand"
+    }
+  }
+]

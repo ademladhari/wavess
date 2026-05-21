@@ -1,0 +1,14 @@
+{
+  "distance": {
+    "auc": 1.0,
+    "tpr_at_target_fpr": 1.0,
+    "target_fpr": 0.01
+  },
+  "p_value": {
+    "auc": 0.546875,
+    "tpr_at_target_fpr": 0.125,
+    "target_fpr": 0.01
+  },
+  "num_watermarked": 8,
+  "num_clean": 8
+}

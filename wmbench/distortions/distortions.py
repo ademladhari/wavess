@@ -14,14 +14,14 @@ from wmbench.utils.image_utils import to_pil, to_tensor
 
 
 distortion_strength_paras = dict(
-    rotation=(0, 60),
-    resizedcrop=(1, 0.35),
-    erasing=(0, 0.45),
-    brightness=(1, 2.5),
-    contrast=(1, 2.5),
-    blurring=(0, 30),
-    noise=(0, 0.2),
-    compression=(90, 5),
+    rotation=(0, 45),
+    resizedcrop=(1, 0.5),
+    erasing=(0, 0.25),
+    brightness=(1, 2),
+    contrast=(1, 2),
+    blurring=(0, 20),
+    noise=(0, 0.1),
+    compression=(90, 10),
 )
 
 

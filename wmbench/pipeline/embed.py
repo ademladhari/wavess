@@ -53,6 +53,10 @@ def run_embed(
                     meta["svd_payload"] = pl
                 elif adapter.name == "flexible":
                     meta["flexible_payload"] = pl
+                elif adapter.name == "ssl":
+                    meta["ssl_payload"] = pl
+                elif adapter.name == "tree-ring":
+                    meta["tree_ring_payload"] = pl
         with open(meta_sidecar_path(dest), "wb") as mf:
             pickle.dump(meta, mf, protocol=4)
 
