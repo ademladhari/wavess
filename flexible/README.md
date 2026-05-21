@@ -130,3 +130,18 @@ Re-enabling any of these only requires loading additional SDM variants and
 rerunning `scripts/05_eval_fidelity.ps1` with the corresponding checkpoint
 IDs -- no changes to training are needed because Dext is designed to be
 SDM-version-agnostic.
+
+## Bundled in `waves` repo (wmbench)
+
+Tracked for Colab/Kaggle without re-training:
+
+* `checkpoints/` — `encoder_b*.pt`, `extractor_b*.pt`, `decoder_b*.pt` (Git LFS)
+* `data/pairs/` — pre-generated train/val pairs (Git LFS)
+
+Still ignored: `hf_cache/` (download SD2.1 on first run), `outputs/`, `outputs_waves_flexible/`.
+
+```bash
+git lfs install
+git add flexible/checkpoints flexible/data/pairs
+git commit -m "Add flexible checkpoints and pair data for wmbench"
+```

@@ -51,6 +51,9 @@ dwt/results/
 
 # Large downloaded weights (re-fetch via metrics code)
 *.pt
+!flexible/checkpoints/
+!flexible/checkpoints/**
+!flexible/checkpoints/**/*.pt
 inception-2015-12-05.pt
 
 # Logs / scratch
