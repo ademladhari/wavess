@@ -103,7 +103,38 @@ def run_benchmark(
     if extra_argv:
         cmd.extend(extra_argv)
     print("Running:", " ".join(cmd), flush=True)
-    return subprocess.call(cmd, cwd=str(waves_root))
+
+    # Prefer in-process run so Jupyter shows tqdm/logs immediately (subprocess buffers on Kaggle).
+    argv = cmd[2:]  # drop sys.executable and script path
+    old_cwd = os.getcwd()
+    old_path0 = sys.path[0] if sys.path else None
+    waves_s = str(waves_root.resolve())
+    try:
+        os.chdir(waves_s)
+        if waves_s not in sys.path:
+            sys.path.insert(0, waves_s)
+        os.environ.setdefault("PYTHONUNBUFFERED", "1")
+        from wmbench.run_benchmark import main as benchmark_main
+
+        return int(benchmark_main(argv))
+    except Exception:
+        # Fallback if import path differs on Kaggle
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
+        return subprocess.call(
+            [sys.executable, "-u", *cmd[1:]],
+            cwd=waves_s,
+            env=env,
+            stdout=None,
+            stderr=None,
+        )
+    finally:
+        os.chdir(old_cwd)
+        if old_path0 is not None:
+            try:
+                sys.path.remove(waves_s)
+            except ValueError:
+                pass
 
 
 def zip_attack_folder(
