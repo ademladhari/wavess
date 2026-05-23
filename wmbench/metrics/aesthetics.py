@@ -3,6 +3,7 @@ from __future__ import annotations
 import torch
 from transformers import CLIPModel, CLIPProcessor
 
+from wmbench.utils.quiet_hf import quiet_hf_loading
 from .aesthetics_scorer import load_model, preprocess
 
 # Tune this to your GPU VRAM. 8 is safe for 8GB, 16 for 24GB.
@@ -13,6 +14,7 @@ def load_aesthetics_and_artifacts_models(device: torch.device | None = None):
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    quiet_hf_loading()
     # Windows CUDA can crash in safetensors load path for this model.
     # Prefer PyTorch bin weights here for stability while staying on GPU.
     model = CLIPModel.from_pretrained(

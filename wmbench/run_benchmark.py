@@ -115,6 +115,10 @@ def main(argv: list[str] | None = None) -> int:
     except Exception:
         pass
 
+    from wmbench.utils.quiet_hf import quiet_hf_loading
+
+    quiet_hf_loading()
+
     p = argparse.ArgumentParser(description="wmbench: watermark robustness and quality benchmark")
     p.add_argument(
         "--methods",

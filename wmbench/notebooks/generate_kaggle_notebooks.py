@@ -110,6 +110,9 @@ GENERATE_BASED = {gen_based}
 DIFF_BATCH = 4
 LPIPS_BATCH = 16
 GENERATED_COUNT = 64   # tree-ring / generate-based only
+
+# Skip CLIP-H aesthetics load (removes 396-line "Loading weights" spam; faster on Kaggle)
+SKIP_AESTHETICS = True
 '''
 
     install_py = '''import os, sys, subprocess
@@ -130,6 +133,15 @@ print("WAVES_ROOT:", WAVES_ROOT.resolve())
 !pip install -q git+https://github.com/openai/CLIP.git huggingface_hub
 
 sys.path.insert(0, str(WAVES_ROOT))
+
+# Fewer duplicate tqdm lines in Kaggle
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
+try:
+    from transformers.utils import logging as _tf_log
+    _tf_log.disable_progress_bar()
+except Exception:
+    pass
 
 # Hugging Face token from Kaggle Secrets (Add-ons -> Secrets -> HF_TOKEN)
 try:
@@ -204,6 +216,7 @@ entries = run_per_attack_with_zips(
     diff_batch=DIFF_BATCH,
     lpips_batch=LPIPS_BATCH,
     skip_rinse4x=SKIP_RINSE4X,
+    skip_aesthetics=SKIP_AESTHETICS,
     extra_argv=extra,
 )
 

@@ -68,7 +68,7 @@ def run_benchmark(
     lpips_batch: int = 16,
     skip_rinse4x: bool = True,
     resume: bool = True,
-    skip_aesthetics: bool = False,
+    skip_aesthetics: bool = True,
     extra_argv: list[str] | None = None,
 ) -> int:
     cmd = [
