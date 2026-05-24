@@ -144,9 +144,12 @@ def zip_attack_folder(
     *,
     method: str,
     include_scores: bool = True,
+    include_metrics: bool = True,
+    include_result_snapshots: bool = True,
     work_root: Path | None = None,
+    output_dir: Path | None = None,
 ) -> Path:
-    """Zip work/{method}/attacked/{attack}/ (+ optional detect scores)."""
+    """Zip attacked/{attack} plus optional scores/metrics and current result files."""
     src = attacked_root / attack_name
     if not src.is_dir():
         raise FileNotFoundError(f"Attack folder missing: {src}")
@@ -165,6 +168,26 @@ def zip_attack_folder(
                 for f in sorted(scores.rglob("*")):
                     if f.is_file():
                         zf.write(f, ("scores/" + f.relative_to(scores).as_posix()))
+        if include_metrics and work_root is not None:
+            metrics = work_root / "metrics" / attack_name
+            if metrics.is_dir():
+                for f in sorted(metrics.rglob("*")):
+                    if f.is_file():
+                        zf.write(f, ("metrics/" + f.relative_to(metrics).as_posix()))
+        if include_result_snapshots and output_dir is not None:
+            # Keep lightweight snapshots of tabular outputs so HF per-attack zips can be
+            # post-processed into leaderboard summaries without re-running evaluate.
+            snapshot_files = (
+                "results_raw.csv",
+                "results_averaged.csv",
+                "results_leaderboard.csv",
+                "normalization_anchors.json",
+                "missing_components.txt",
+            )
+            for name in snapshot_files:
+                fp = output_dir / name
+                if fp.is_file():
+                    zf.write(fp, f"results/{name}")
 
     return zip_path
 
@@ -244,6 +267,7 @@ def run_per_attack_with_zips(
             export_dir,
             method=method,
             work_root=work_root,
+            output_dir=output_dir,
         )
         size_gb = zip_path.stat().st_size / 1e9
         entry = {
@@ -263,6 +287,80 @@ def run_per_attack_with_zips(
                 entry["hf_error"] = repr(e)
                 print(f"HF upload failed: {e!r}", flush=True)
 
+        append_manifest(export_dir, entry)
+        entries.append(entry)
+
+    return entries
+
+
+def run_all_attacks_then_zip(
+    *,
+    method: str,
+    waves_root: Path,
+    output_dir: Path,
+    attack_names: list[str],
+    export_dir: Path,
+    hf_repo_id: str | None = None,
+    upload_each: bool = True,
+    images: str | None = None,
+    negatives: str | None = None,
+    generate_based: bool = False,
+    **bench_kwargs,
+) -> list[dict]:
+    """
+    Run ONE benchmark call with all attacks, then zip/upload each attack folder.
+    This avoids repeated embed/detect/evaluate model setup cost from per-attack runs.
+    """
+    output_dir = output_dir.resolve()
+    work_root = output_dir / "work" / method
+    attacked_root = work_root / "attacked"
+    entries: list[dict] = []
+
+    print(
+        f"\n{'=' * 60}\nMETHOD={method}  ATTACKS={','.join(attack_names)}\n{'=' * 60}\n",
+        flush=True,
+    )
+    rc = run_benchmark(
+        waves_root=waves_root,
+        method=method,
+        output_dir=output_dir,
+        images=images,
+        negatives=negatives,
+        attacks=attack_names,
+        generate_based=generate_based,
+        **bench_kwargs,
+    )
+    if rc != 0:
+        raise RuntimeError(f"run_benchmark failed for method {method!r} (exit {rc})")
+
+    for attack in attack_names:
+        if not (attacked_root / attack).is_dir():
+            print(f"Warning: no attacked folder for {attack}, skipping zip.")
+            continue
+        zip_path = zip_attack_folder(
+            attacked_root,
+            attack,
+            export_dir,
+            method=method,
+            work_root=work_root,
+            output_dir=output_dir,
+        )
+        size_gb = zip_path.stat().st_size / 1e9
+        entry = {
+            "method": method,
+            "attack": attack,
+            "zip": str(zip_path),
+            "size_bytes": zip_path.stat().st_size,
+        }
+        print(f"Zipped: {zip_path} ({size_gb:.3f} GB)", flush=True)
+        if upload_each and hf_repo_id:
+            try:
+                url = upload_to_huggingface(zip_path, hf_repo_id)
+                entry["hf_url"] = url
+                print(f"HF download: {url}", flush=True)
+            except Exception as e:
+                entry["hf_error"] = repr(e)
+                print(f"HF upload failed: {e!r}", flush=True)
         append_manifest(export_dir, entry)
         entries.append(entry)
 

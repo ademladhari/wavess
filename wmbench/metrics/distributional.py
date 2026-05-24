@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
@@ -220,27 +221,36 @@ def compute_fid(
         else:
             num_workers = max(torch.cuda.device_count() * 4, 8)
 
-    # Handle paths or PIL image lists
-    if not isinstance(images1, (str, Path)):
-        assert isinstance(images1, list) and isinstance(images1[0], Image.Image)
-        assert isinstance(images2, list) and isinstance(images2[0], Image.Image)
-        path1 = save_images_to_temp(images1, num_workers=num_workers, verbose=verbose)
-        path2 = save_images_to_temp(images2, num_workers=num_workers, verbose=verbose)
-    else:
-        assert isinstance(images1, (str, Path)) and os.path.exists(images1)
-        assert isinstance(images2, (str, Path)) and os.path.exists(images2)
-        path1 = str(images1)
-        path2 = str(images2)
+    temp_dirs: list[str] = []
+    try:
+        # Handle paths or PIL image lists
+        if not isinstance(images1, (str, Path)):
+            assert isinstance(images1, list) and isinstance(images1[0], Image.Image)
+            assert isinstance(images2, list) and isinstance(images2[0], Image.Image)
+            path1 = save_images_to_temp(images1, num_workers=num_workers, verbose=verbose)
+            path2 = save_images_to_temp(images2, num_workers=num_workers, verbose=verbose)
+            temp_dirs.extend([path1, path2])
+        else:
+            assert isinstance(images1, (str, Path)) and os.path.exists(images1)
+            assert isinstance(images2, (str, Path)) and os.path.exists(images2)
+            path1 = str(images1)
+            path2 = str(images2)
 
-    # Folder pairs: compute Frechet distance from features only. Do not use fid_folder, which pulls
-    # get_reference_statistics() and may hit HTTP "downloading statistics" every call for custom names.
-    return _fid_between_dirs(
-        path1,
-        path2,
-        mode=mode,
-        model_name=model_name,
-        device=device,
-        batch_size=batch_size,
-        num_workers=num_workers,
-        verbose=verbose,
-    )
+        # Folder pairs: compute Frechet distance from features only. Do not use fid_folder, which pulls
+        # get_reference_statistics() and may hit HTTP "downloading statistics" every call for custom names.
+        return _fid_between_dirs(
+            path1,
+            path2,
+            mode=mode,
+            model_name=model_name,
+            device=device,
+            batch_size=batch_size,
+            num_workers=num_workers,
+            verbose=verbose,
+        )
+    finally:
+        for td in temp_dirs:
+            try:
+                shutil.rmtree(td)
+            except OSError:
+                pass

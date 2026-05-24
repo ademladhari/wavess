@@ -101,6 +101,9 @@ EXPORT_DIR = f"/kaggle/working/wmbench_exports/{{METHOD}}"
 RUN_GPU_ATTACKS = True
 RUN_DIST_ATTACKS = True
 SKIP_RINSE4X = True
+# True = one benchmark run for all attacks (faster overall), then zip per attack.
+# False = per-attack runs (more frequent/checkpointed uploads; best for reliability).
+RUN_ALL_IN_ONE = False
 
 # Download: upload each zip to Hugging Face (set HF_TOKEN in Kaggle Secrets)
 UPLOAD_TO_HF = True
@@ -180,6 +183,7 @@ _common = _load_kaggle_common(WAVES_ROOT)
 GPU_ATTACKS = _common.GPU_ATTACKS
 DIST_ATTACKS = _common.DIST_ATTACKS
 run_per_attack_with_zips = _common.run_per_attack_with_zips
+run_all_attacks_then_zip = _common.run_all_attacks_then_zip
 zip_full_results = _common.zip_full_results
 upload_to_huggingface = _common.upload_to_huggingface
 
@@ -202,7 +206,8 @@ extra = []
 if GENERATE_BASED:
     extra = ["--generated-count", str(GENERATED_COUNT)]
 
-entries = run_per_attack_with_zips(
+runner = run_all_attacks_then_zip if RUN_ALL_IN_ONE else run_per_attack_with_zips
+entries = runner(
     method=METHOD,
     waves_root=WAVES_ROOT,
     output_dir=out,
@@ -223,6 +228,13 @@ entries = run_per_attack_with_zips(
 print("\\nDone per-attack zips:", len(entries))
 for e in entries:
     print(e.get("hf_url") or e["zip"])
+
+# Also build/upload a full bundle from this same cell (metrics + csv + plots).
+full_zip = zip_full_results(out, exp, METHOD)
+print("\\nFull results zip:", full_zip, f"({{full_zip.stat().st_size/1e9:.3f}} GB)")
+if UPLOAD_TO_HF:
+    full_url = upload_to_huggingface(full_zip, HF_REPO_ID)
+    print("Full results HF:", full_url)
 '''
 
     final_py = '''# Final aggregate zip (CSVs + plots + full work/)
