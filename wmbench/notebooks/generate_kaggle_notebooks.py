@@ -59,7 +59,7 @@ print("FLEX_ROOT:", FLEX_ROOT, "exists:", FLEX_ROOT.exists())""",
 import os
 from pathlib import Path
 
-SSL_ROOT = Path(os.environ.get("WMBENCH_SSL_ROOT", "/kaggle/working/ssl"))
+SSL_ROOT = Path("/kaggle/working/waves/ssl")
 os.environ["WMBENCH_SSL_ROOT"] = str(SSL_ROOT)
 print("SSL_ROOT:", SSL_ROOT, "exists:", SSL_ROOT.exists())""",
     },
@@ -101,9 +101,7 @@ EXPORT_DIR = f"/kaggle/working/wmbench_exports/{{METHOD}}"
 RUN_GPU_ATTACKS = True
 RUN_DIST_ATTACKS = True
 SKIP_RINSE4X = True
-# True = one benchmark run for all attacks (faster overall), then zip per attack.
-# False = per-attack runs (more frequent/checkpointed uploads; best for reliability).
-RUN_ALL_IN_ONE = False
+# Per-attack benchmark + zip + optional HF upload (checkpointed, reliable).
 
 # Download: upload each zip to Hugging Face (set HF_TOKEN in Kaggle Secrets)
 UPLOAD_TO_HF = True
@@ -125,7 +123,7 @@ from pathlib import Path
 WAVES_ROOT = Path("/kaggle/working/waves")
 if not (WAVES_ROOT / "wmbench" / "run_benchmark.py").exists():
     # Option A: git clone (edit YOUR_USER). Option B: Add Data -> upload waves zip/dataset
-    !git clone --depth 1 https://github.com/YOUR_USER/waves.git /kaggle/working/waves
+    !git clone --recurse-submodules --depth 1 https://github.com/YOUR_USER/waves.git /kaggle/working/waves
 
 os.chdir(WAVES_ROOT)
 print("WAVES_ROOT:", WAVES_ROOT.resolve())
@@ -183,7 +181,6 @@ _common = _load_kaggle_common(WAVES_ROOT)
 GPU_ATTACKS = _common.GPU_ATTACKS
 DIST_ATTACKS = _common.DIST_ATTACKS
 run_per_attack_with_zips = _common.run_per_attack_with_zips
-run_all_attacks_then_zip = _common.run_all_attacks_then_zip
 zip_full_results = _common.zip_full_results
 upload_to_huggingface = _common.upload_to_huggingface
 
@@ -206,8 +203,7 @@ extra = []
 if GENERATE_BASED:
     extra = ["--generated-count", str(GENERATED_COUNT)]
 
-runner = run_all_attacks_then_zip if RUN_ALL_IN_ONE else run_per_attack_with_zips
-entries = runner(
+entries = run_per_attack_with_zips(
     method=METHOD,
     waves_root=WAVES_ROOT,
     output_dir=out,
@@ -255,7 +251,7 @@ for z in sorted(Path(EXPORT_DIR).glob("*.zip")):
 
     md = f"""# {cfg['title']} — Kaggle benchmark
 
-Runs **one attack at a time** with `--resume`, then zips `work/{method}/attacked/<attack>/` after each.
+Runs **one attack at a time** with `--resume`, then zips each attack folder to HF with attacked images, detection scores, **metrics** (LPIPS, FID, aesthetics, etc.), and CSV snapshots. Uploads `{method}__FULL_RESULTS.zip` at the end.
 
 ## Before you run
 1. **Add Data**: `images500`, `negative500` (and flexible/ssl checkpoints if needed).
