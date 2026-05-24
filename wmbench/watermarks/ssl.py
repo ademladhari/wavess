@@ -173,27 +173,27 @@ class SSLAdapter(WatermarkAdapter):
 
     def embed(self, image: Image.Image) -> Image.Image:
         x = _pil_to_tensor(image).to(self._device)
-        with torch.no_grad():
-            if self._mode == "zero_bit":
-                out = self._embed_zero_bit(
-                    self._backbone,
-                    x,
-                    key=self._key,
-                    fpr=self._fpr,
-                    config=self._embed_cfg,
-                    seed=self._seed,
-                )
-            else:
-                assert self._message is not None
-                out = self._embed_multi_bit(
-                    self._backbone,
-                    x,
-                    carriers=self._key,
-                    messages=self._message.unsqueeze(0),
-                    margin=self._margin,
-                    config=self._embed_cfg,
-                    seed=self._seed,
-                )
+        # Embed optimizes pixels via loss.backward(); must not run under no_grad().
+        if self._mode == "zero_bit":
+            out = self._embed_zero_bit(
+                self._backbone,
+                x,
+                key=self._key,
+                fpr=self._fpr,
+                config=self._embed_cfg,
+                seed=self._seed,
+            )
+        else:
+            assert self._message is not None
+            out = self._embed_multi_bit(
+                self._backbone,
+                x,
+                carriers=self._key,
+                messages=self._message.unsqueeze(0),
+                margin=self._margin,
+                config=self._embed_cfg,
+                seed=self._seed,
+            )
         self._last_payload = self._payload()
         return _tensor_to_pil(out)
 
