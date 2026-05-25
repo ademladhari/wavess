@@ -1,0 +1,400 @@
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHpWB3FIW-UD69Zxd89uUBM2AhY-DWLtT9r7_EAjGmYMlaT_0o5G_IfAYuBVetkdo4KJwAgpmkIXNWtJgy6IsGoi4LFsytEKY1_zoWlfY5r_7wZcG3jwetKTXKhp3NsG328B0yqpQ=w211-h74-v0
+Raf. J. of Comp. & Math's. , Vol. 7, No. 3, 2010 Third Scientific Conference Information Technology 2010 Nov. 29-30
+187
+Digital Image Watermarking Using Singular Value Decomposition
+Surah Ramzi Sheriff
+College of Engineering
+University of Mosul, Iraq
+Received on: 4/10/2010 Accepted on: 10/11/2010
+ABSTRACT
+This paper presents a digital image watermarking that applied theory of linear
+algebra called “Singular Value Decomposition (SVD)” to digital image watermarking
+.SVD watermarking scheme, which successfully embeds watermarks into images
+imperceptible way .SVD method can transform matrix A into product USV .
+Watermarking, is the process of embedding data into a multimedia cover, and
+can be used primarily for copyright protection and other purposes. Schemes that have
+recently been proposed to modify the pixel values ​​or Transform domain coefficients. The
+Singular Value Decomposition (SVD) is a practical numerical tool with applications in
+a number of signal processing fields including image compression. In an SVD-based
+watermarking scheme, the singular values ​​of the cover image are modified to embed the
+watermark date. This method has been proposed an optimal SVD-based watermarking
+scheme that embeds the watermark in two steps. In the first step, the cover image is
+divided into smaller blocks and a piece of the watermark is embedded in each block. In
+the second step extracting the watermark from the watermarked image.
+All tests and experiments are carried out using MATLAB as computing
+environment and programming language.
+Keywords: Watermarking, Singular Value Decomposition, Digital Watermarking, Image Processing.
+فردةمباستخدام تحليل القيمة الالرقمية ة يور عالمة المائية الصال سورة رمزي شريف
+جامعة الموصل ، كلية الهندسة 10/11/2010قبول: تاريخ ال 4/10/2010تاريخ االستالم:
+ملخصال سددادا ري دة الالد الاسدة الميدما تلمدل يقدد ذداا ال تدي ادممة العامدة الماييدة اليدوا ة ال ميدة ا
+يادمة نناداو شكلدغل مد م يدة ادممة العامدة SVD. أن رموذج اممة العامة المايية SVDالقيمة المف د أن اددممة . USV إمغارهددا تو ددل الميددفواة الددا ا ددة ميددفواا ذددة SVDأن ط قددة .الماييددة اددة اليددوا
+ددة يددداد لددغل اساسددة العامددة الماييددو دمليددة دمدد الل يارددا اددة دنيدد مددة دناصدد الوسددايا المدعدددد شال لتماية حقوق النل شالدأليف شا اض أخ ى. أن النماذج المقد حدة حاليدات تدو ديب الليغيدل أش معداما الدتو دل
+ددة الدتلمددل العدددد الميددداد اددة العداددد مددة ماددا معالادد SVD. تلمددل القيمددة المفدد د ة ا شدداا ذددة ا دداا ادة رمدوذج اسدال اسددادا تلمدل القيمدة المفد د اددب تددو . ادمنها سد ص اليدوا
+دد و رمددوذج أم ددل مددة اددممة العامددة القدديب المفدد د لليددوا المدسددا لدددم نيارددا العامددة الماييددة .ذدداو الس قددة ق See more قيدديب شالددا يقددو ندددم SVDالماييددة الملنددة دلددا اسددال
+اليدوا المدسدا الدا أجدةاو صددم ش ادممة نياردا العامدة الماييدة ادة سدل جدةو مدة ذداو اليدوا امدا الاسدو دددب نفمدددا جميددد .ال See more اليدددوا ال ميدددة المدادددمنة للعامدددة الماييدددة
+ا اسدادا لدة . MATALBا خد ا
+https://lh3.googleusercontent.com/notebooklm/AKXwDQFjdXU8zfyMEnvGQMi0Vru0ZDw10IQ2lylL756VIIXIMdISh5ZaZ-O7iA2kUbmwef-4G93B8QGWLVSXkIiMIHfXKdXyxE82L8KrkMEnLkhscPynNgn_LwXxoK-GyLKTJIjUUicY=w211-h74-v0
+Sura R. Sheriff
+188
+.ف د ، داما مايية ا مية ، معالاة اليوامل القيمة الممايية ، تلالعاما الالكلما المفداحية:
+1. Introduction
+In recent days, usage of computer networks for communication and for
+information sharing leads to increase in size of Internet. As the size of the Internet
+grows, the volume of multimedia data (images, text, video / audio) floating around also
+increases day by day. As many advanced tools are readily available to duplicate and
+modify those data in the Internet easily, Security is the major concern, which requires
+some mechanisms to protect digital multimedia data .Thus watermarking is a technique
+which supports with feasible solution.
+Image processing is computer imaging where the application involves a human
+being in the visual loop .in other words, the image are to be examined and acted upon
+,An image can be defined as a two dimension function f (x, y) (2D image), where x and
+y are spatial coordinates, and the amplitude off at any pair of (x, y) is the gray level of
+the image at that point. For example, a gray level image can be represented as:
+f ij≡f ( x i ,y j )
+Where x, y and the amplitude value of f are finite, discrete quantities, the image is called
+“a digital image”.[1][2]
+Watermarking (data hiding) is the process of embedding data into a multimedia
+element such as image, audio or video. This embedded data can later be extracted from,
+or detected in, the multimedia for several purposes including copyright protection,
+access control and broadcast monitoring.
+Digital Watermarking is defined as the process of hiding a piece of digital data
+in the cover data which is to be protected and extracted later for ownership verification
+.[3][4].A digital watermarking can be visible or invisible .A visible watermark typically
+consists of a conspicuously visible message or a company logo indicating the ownership
+of the image .On the other hand a invisible watermarked image appears very similar to
+the original .The existence of an invisible watermark can only be determined using an
+appropriate watermark extraction or detection algorithm.[5].A watermarking algorithm
+consists of the watermark structure, an embedding algorithm and an extraction, or a
+detection algorithm. Watermarks can be embedded in the pixel domain in the transform
+domain such as the DCT or wavelet.[6] In most multimedia applications, three desired
+attributes for a watermarking scheme are invisibility, robustness and high capacity.
+Invisibility refers to the degree of distortion introduced by the watermark and its effect
+on the viewers or listeners. Robustness is the resistance of an embedded watermark
+against intentional attacks, and normal audio/visual processes such as noise, filtering,
+and resembling, scaling, rotation, cropping and lossycompression.The watermark can be
+easily erased by lossy image compression. [8][9]
+Singular value decomposition is a numerical technique used to diagonalize
+matrices in numerical analysis. It is an algorithm developed for a variety of applications.
+Any matrix 'M' is decomposed into three sub matrices [u, s, v]such that: M=u ×s×
+v T
+Where 'u' and 'v' are the orthogonal matrices u × u T
+= I and v× v T
+= I where 'I' is the
+Identity matrix and 's' is the diagonal matrix(s 1 ,s
+2, p.
+3 ...s
+N ) where s
+1 >=s
+2 >=s
+3 ...s
+(N-
+1) >=s
+N. [10]
+These values ​​are known as singular values, and matrices u and v are known as
+corresponding singular vectors [11]. The above decomposition is termed as Singular
+Value Decomposition.
+https://lh3.googleusercontent.com/notebooklm/AKXwDQF-wQYjk6jKWKVl4CCF-Iki_If_yR73GPB6cr9Lr0FtygbCiGpwmE8VsrJIChnCcEeouu6AQFs6rmR8SuU8SIkAzfXZKs10pett_4Cm00D690Mf0HGDgT1X_dv7yHnYUEpnwnqfWg=w211-h74-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHyZVzmMj_fB6Ga9q3ZhyZtuCxknIe_AMyNwuun6CiNPBfqqp3XIfblgc0No7NlQoEZk6W6XFv-2JjANTkfCPPVqveckww8eH6Yp7zNqIO26qtOgAqF1SYSLgXxKCJXollvwxU4uA=w680-h225-v0
+Digital Image Watermarking Using…
+189
+A SVD, applied to the image matrix, provides singular values ​​(diagonal
+matrix's') that represent the luminance or color intensity of the image while the
+matrices 'u' and 'v' represent the geometry of the image. It has been scientifically
+proved that slight variation in the singular values ​​doesn't change the visual perception
+of the image. [10]
+There are many researches about watermarking, Like in 2003 a research for an
+optimal watermarking scheme are built based on value decomposition [4]. In
+2006, A nonnegative matrix factorization scheme are used for digital images
+watermarking [7]. In 2009, digital image watermarking built using complex wavelet
+transform [14]. In this paper he implements the SVD. so that the hidden digital image
+watermarks can be removed and high image quality can be provided in restored images.
+Matlab is used as a platform of programming and experiments in this project,
+since MATLAB is a high-performance in integrating computation, visualization and
+programming.
+The rest of this paper is organized as follows. In Section 2, we describe theory
+of singular value decomposition SVD. Several experimental results are illustrated and
+discussed in Section 3. Finally, conclusion and future work are stated in Section 5.
+2. Theory of Singular Value Decomposition
+2.1 Singular Value Decomposition
+Singular value decomposition (SVD) is a linear algebra technique that
+decomposes a given matrix into three component matrices [15]: (1) the left singular
+vectors; (2) a set of singular values; and (3) and singular right vectors. The two matrices
+that are made up of singular vectors provide information about the structure of the
+original matrix. The singular Values ​​describe the strength of the given components of
+the original matrix. The SVD theorem [13] states that given a matrix M, then there
+exists a decomposition of M such that A=USV see the figure 1 .
+The SVD of a matrix can also be described geometrically. The SVD shows that the
+values ​​of any matrix A can be reconstructed by a rotation (U), followed by increasing
+the matrix values ​​(S), followed by another rotation (V) [16]
+Figure1: illustration of Factoring A to USV.[19]
+For example, if A represented coordinates that generated a three-dimensional
+shape, then that shape could be constructed from the rotational information in U and V,
+along with stretching the shape out to its proper size with the information in S [16]. This
+type of decomposition can be important and useful in that the rotational matrices isolate
+the key components of the original matrix, finding relationships between the various
+data points, while the strength matrix indicates which of the key components
+illuminated in the rotational matrices are the most important [15, 16,17]. In this
+research, the core idea of ​​isolating key components of the original matrix is ​​the basis for
+using theSVD. When the matrix is ​​comprised of change records, fault information, or
+some other data from the development process, these key components highlight
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHlls3MGyXoTmedg7C-oRQUBpENzzNjjziGSOmRRHqrj3tTH3V25t6HNUzXPGFrdqAyAq05zatKwz5KKQJo1HwZvZLAlyf4eGPr7YZtchu68YI8Tw1X-MYPTlh-BY4H_dysdB_x=w211-h74-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQGdFrH9o6E8gAUfUTOCB8qw-SCbOKtebY5rmIYQFXu4bxOZsB1-8DxfCcJ0an9LfiL0YLKZmSpwoaD_S2HecNGPkoDAEjGCKNBLY_QegKC8KxdZWDB1zwquTaB8-zNCNfisM9WBLg=w515-h137-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHUnhvugB3QUh_vn923hb6zah4dbPZa2dVJJKuW_HcqHj9DbSMcTvxvsL5E9FbvhetWudBK0u7h297OTItPv8IJ4etCt4PI3iKJVrdqaB040P_c5NtkdtElHVFXv32nx_tqmjEM=w130-h34-v0
+Sura R. Sheriff
+190
+underlying structures in the code base. The SVD has other uses in computing. For
+instance, this technique can be used in Image and signal compression. A gray scale
+image could be represented as a two dimensional matrix made up of intensity values,
+indicating the darkness of a particular pixel. In this instance, we could treat the image
+matrix itself as the original M matrix and perform a SVD on it. Once the decomposition
+is completed, the resulting matrices, USV, can also be represented as the sum of
+component matrices, as shown in Equation
++ +……+ …(1)
+Where k is less than or equal to the rank of matrix M. This provides a rank-k
+approximation of the matrix. The first component of this factorization indicates the
+component that has the largest singular value and contributes the most variability to the
+overall matrix. As subsequent components are added together, the matrix, and thus the
+image itself, begins to re-take its original form. [15][17].
+2.2 Singular Value Decomposition watermarking
+SVD watermarking is designed to work on binary .for an image of N pixels
+and a binary watermark of p pixels , divided the image into (N/4) non
+overlapping blocks whose size is 4 pixels [20].Which is based to decide the
+positions of embedded blocks for each watermark bit.The watermarking embedding
+procedure show in this figure [19].
+Figure 2: Watermark embedding procedure.
+Using SVD on different blocks of the image .for each generated Sj matrix of
+each block Bj , where 1 ,as below , they let s3 be equal to s2 and set
+s2 be equal to s2+ for embedding the binary value of the watermark, where
+is a constant and wi is the watermark bit .Each Sj matrix of a block Bj contains value of
+the watermark .After embedding watermark into sj matrix of block Bj,the embedded
+block is obtained by inversing its corresponding U,V.
+The proposed watermarking can be broken into two procedures: embedding, and
+extraction and restoration. [20].
+2.3 Properties of the SVD
+There are many properties and attributes for SVD, here some of these properties
+are presented
+a. The singular value , , are unique, however, the matrices U and V are not
+unique.
+b. Since = , so V diagonalizes , it follows that the s are the
+eigenvector of .
+https://lh3.googleusercontent.com/notebooklm/AKXwDQE7ZSjgr1gs-CA8kdLeItGHNWWcwC8w1F3qNOnaf0oy2p5IzRIk-_wQjk8cAQMnpV7OGxsSl4iYbs8rnBtMAMqKhMy8JvQcl_Cp48uywpbYkTotmB927pu5G-aSvivnijj088s0=w211-h74-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQG2ikrPa449cJ3IGGP4WlBEs4XGEWTfSuIXh50b6AIdCB3NJ_6IdMyIvI5eA-wlfZct9u4MKcKqLLAT1ga3gUUzgMXfYldh3aHjDvd50qlpi9Xk_dZlfQrg20qdPWnSxq-A7bmTtg=w157-h153-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQH6F3RMTblY931Xt8TLsm1FEf8tKJCf7Uj5PbB-Jy28qSWN1RomHBsNNmHZoDMftw_LRmb54WkaFiI9G1kaGkf0lkOW8Y5qtYq4GgrfkK5OudkwtjifEVhlw7YRkYBKQTLsRK-NNQ=w68-h59-v0
+Digital Image Watermarking Using…
+191
+c. Since = , so it follows that U diagonalizes and that the 's are
+the eigenvectors of .
+d. If A has rank of r then , ,… form an orthonormal basis for range space of ,
+R( ),and , … form an orthonormal basis for .range space A, R(A).
+e. The rank of matrix A is equal to the number of its nonzero singular values.[19]
+2.4 The proposed algorithm
+The watermark is the signal which is actually added to the cover image A( kx
+k ) . A co v er ima g e A i s d i v i d e d in t o n x nb l oc k s . F ore a c hn x nb l oc k ,λma x d e n o t es t h e
+largest SVD of the cover image. where r, the rank of W, is less than or equal to l. The
+or d ero f t h e S V so f Wi sr an d o mi ze d ,an d e a c hλ w ii se mb e dd e d in t oo n e n x nb l oc k o f
+the cover image.
+2.4.1 Steps of the Embedding Process
+The block diagram for embedding watermark using SVD technique is shown in fig. 4
+and fig.5.The host image is divided into smaller blocks then SVD of blocks, variable
+scaling factor and distributed over the image blocks .let (A) the cover image is the size
+of NxN and (W)is the watermark.
+a. Input a cover image of size N × N and watermark image.
+b. Convert the RGB components of color image to YCbCr. luminance (Y) and
+chrominance (Cb and Cr) color values ​​as columns, rgbmap is returned as an M- by-
+3 matrix that contains the Red, Green, and Blue values ​​equivalent to those colors.
+c. The SVD technique is applied on each block of cover data image as well as on
+watermark using SVD .
+d. Combine the watermark with the SVD of the selected block using appropriate scaling
+factor; , as following Equation
+…(2)
+e. Inverse SVD transform technique is applied to get the watermarked image [14].As
+shown this in fig5 illustration steps of the Embedding Process.
+Original image
+watermark
+Figure3: Process of Embedding Watermark Image
+SVD
+TRANSFORMATION
+Watermark
+embedding process
+Watermarked
+image
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHe1rP_EX63R6uGJ5a3qvmuGIgUxiE-yai17HBH8kUwvbqqfUNl3ThWQ4CSHlZe2gNHdGLQ45dR8nA87xqy-O7l_3nH5uwK64B-HKd_u-vyZ4PM7IQr7yZRPKqnOqHvWfLWtNzI7Q=w211-h74-v0
+Sura R. Sheriff
+192
+Select
+Embedding Location
+Watermark
+EmbeddingWatermarked
+Original
+P seq.1.
+P seq.2.
+P seq.n.
+SVD Push to
+SVD
+P' seq.1.
+P' seq.2.
+P' seq.n.
+ISVD
+Figure 4: Diagram of Watermark Embedding
+image
+image
+e
+https://lh3.googleusercontent.com/notebooklm/AKXwDQEYxRFpp7c9_2dKWRFGsbuJQhZmI-geJpAyVn2Dm81yPQIe5pAbjAkH6lPmXDhnSgAB0Z-sgSTCgAdlp1NzRIzgv-Nn5wjRLoOZB3mUWuSWYNZuszJRtJ-Iu3eHp6Gz_kg3SIR92Q=w211-h74-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQEuyZFhgucDhykfmtvvy27RwOtJIjn-WKNuC3cuZdPOqXgI7WYYXe8rHTJtmIFU7BKtISbKmmcFWPQfuPMfIa5CSG2ZcK0ERjCITTkCnd1ZcPaqj1MdpVBiYcyGwF8BP7dlriGQDg=w680-h225-v0
+Digital Image Watermarking Using…
+193
+YES YES
+YEAH
+Figure 5: Flow Chart of the Embedding Process
+2.4.2 Steps of the extraction process
+In general, the extraction process is the inverse of the embedding procedure. In
+watermark extraction, a possibly distorted watermark ( W ) is extracted from the
+Start
+Read Image Data Read watermark
+Read The Value of Scale Factor
+Divided The Original Image to blocks to
+image size
+Apply The Singular Value Decomposition (SVD) technique
+Select Location for Embedding
+Watermark Embedding In blocks original Data image
+If (image) is
+RGB convert YCbCr
+Invers Singular Value Decomposition of Segment embedding
+Display the Watermarked image
+End
+https://lh3.googleusercontent.com/notebooklm/AKXwDQEU33KG_JrCw2ktV3gj7ZXCBCOs5GMmgs_scUv9arw3Wz25U8iTnKdbFwnLa4ZcYv2aCa5IqTbbQNG_ap_ovkfZ9B8AvXbr9UOGHlXUTo3J8zB5IwPrbZNtFmSDB1TapqB95WNx=w211-h74-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQEfE10Te95Lf_EWx5HU0RBTFksih5jngZC6AoBl9zd4lvq-xAEXL6ht4kIEt39isqUD7yRr8zkTt-_t3vXeLfL0pD8Y_1-hEZHlB2SDuI3sr3TpqLS_W7Ph7vcrpO2Mu17Hl8aqFw=w158-h59-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHr6zraX37P5-YoUUzLR-RuIRvc6mKAtrsf3kMn4iO0Mua_M5PtQDfeRqr22MgH-PVp_JF2XNEMIpMny3p52pkuwnzeSdFX_BLE_aa33MiWdtm3AW61lrW7JbDgOgoVp1zzulR44w=w157-h153-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQFPfclYGlDarUFZRRdUF5ffpH-IrP5lA1RXYbhcMdO7Rw8Vp4EcmriGUHrN995VjPID3N6vzvtXNNlZZG5131ym9Z-fVUQibNizCd87cJa87fQkQp_OFKmQAAPgfUBAzr3knrINtA=w32-h32-v0
+Sura R. Sheriff
+194
+possibly distorted watermarked image by essentially reversing the above watermark
+embedding steps.
+Let (D) the watermark image is the size of N x N and (W) is the watermark. The
+watermark extraction can be described as follows:
+a . L e t j=1:N ,α i s t h e v a l u eo f sc a l e f a c t or .
+b. Compute the SVD of the corresponding block, obtain
+three matrices which are Uj , Sj , and Vj . Assume that
+Sn= …(4)
+c. Compute the diagonal (S).
+d. Extract the watermark from watermark image by using Equation
+In …(5)
+Where W:Watermark
+D : watermarked image
+S: Diagonal matrix of original image.
+α:i s a sc a l e f a c t o r . S e e f i g . ( 6 ) an df and g . ( 7 ) .
+Watermark
+Watermarked Image
+Figure 6: Watermark Extraction Process
+Figure 7: Flow chart of the extraction process
+Apply SVD of
+Watermarked Image
+IN=( D−S ) / α
+Start
+Read The Watermarked
+Image
+Apply The Singular Value Decomposition (SVD) to Watermarked Image
+Extracting the Watermark W
+Water mark=(watermarked image-original image)/value scale factor
+Display the watermark
+End
+https://lh3.googleusercontent.com/notebooklm/AKXwDQEoPNfBGOij6S0xFnl8CPKLfjIqDS_quHB23sZ5vxLLlg8VPtLWCpqTm8e0Yie1eNgutZMSTkZiK5CtcObLpf_i48vIkPHKYY92MrMFKo-HMK6rG3noKFiJvXBZIZ8tXncvjCGvJQ=w211-h74-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQE5NB3R4HIkXvMbxv_6yNodiH8_15w0R-CSF4bqFOwQ9eQ5rtB4ViN-_wBSt9qcbEj3B23hfpBrPii6hNH36nwIo-4K7Q7rq4RS_KHPUH9-445kHnzO5fE2dC6404Vtrl-UoC1YjA=w157-h153-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQE4L59NqOHm10JuwUK7k3UE1rQ7Au5vZwALTTfQDW0xwJ_cNzkx1eEVjfnY_6Qm4tlfIAXeo977qWnGmpeHtiqD4h4GksNAXxXiLTxDVbmzqHiPfHH17Fak60DIwRN9pfPeFQ_8=w32-h32-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQG_uagpnUIzps4dPS2bIHnLU04LoJ48k74xBhEeKK1ZIXAK5rgcMP2oRvkuFg2s16LLV9InNPkzHdnbS8096WeGurbV-sY7LfGZfpmW6ugu0nBmx83JfOJCldpyJXZ4bdpW1FuMzA=w157-h153-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQFduKg7DJXcH-Ov61X7in3Hlck6n7nWX_iHfv6fVa3Ij3oYczLJQhYc_pKHjJEuI01Ihbtm7YobMoOd6q95TF37gWgqeh2cFbWv35xbvEPi8UulP5vymR0Lxz2Mq84NaX3l4h2FsA=w32-h32-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQEl8X8ulWyv5_irQ59IO90xy5gQTXYZOayXBcpi0KmAupb-Ug3uMjcLJFBnMegAhPvj-a2UjdgBOHpmyPvd-rlxCN_VfbBb3MITrW3az7dVYVuE2tGFA5kQkWSJj51Ii4GChGrjgg=w157-h153-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHDeq6a3XKAk0OjdQDczjJStp9iE1Isw6J7EZCgH3eAEAZAapR3timK64uGh2JPBjw1bBaWsyEwf8iLkhBL-EblUr16E2N_RwKPCYDZCwK_3X69uMeva1VYUW9DwiW6k6HzAL5Fdw=w148-h146-v0
+Digital Image Watermarking Using…
+195
+3. RESULTS
+In this section, we have presented the experimental results we have implemented
+in MATLAB. Gray scale Lena image with size 256 × 256 pixels and RGB Lena image
+with size 512×512 pixels which were used as the cover images, and the watermark
+image with size 32 × 32 pixels are used. See fig. (8).
+(a) (b) (c)
+Figure 8: Different size of images:
+(a) Original Image
+(b) Original Image
+(c)Watermark Image
+Fig. 9 shows the program results which displayed the original image and the watermark
+image, then obtained the watermarked image. This figure shows the extraction
+watermark images where get successful execution.
+(a) (b) (c)
+Figure 9: Gray scale Lena Image Embedded Process
+(a) Original Image
+(b) Watermark
+(c) Watermarked Image
+https://lh3.googleusercontent.com/notebooklm/AKXwDQFZXOswdDTlzPPRJSLzVSlC4lLoXZOPH8maJcLeGlMkygLkXI_bc6Xrh1E7Dl2Iti_cTlNLJZ4NGDgASNVAPHdnADbHvajrWVC8Mr8eEjUG74LmW1KAj5qIOjtPFLe8GcFUFaApgA=w211-h74-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQGTvzx0assyobVT8mcGMfL6r3xsezlLMt7wCid-AXdsr7DNH6gMHZe9YOB9NXylmbu3hUtvSnlBxeFGgjO83IwjHoHlvb1pk9Kd6Jn1c3jZTK_o-ugevrtabCZYMnhOrGgm_Tf3lA=w157-h153-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQF8w1LDMVfMBO6BrtZ7q89QYorSXU9Z3PYUiXcwmgVAMZUp6wvvSLq8Cv45bTpqn0qXVpqYV003GNGWk-hNLO691DbGgXYzCihzsc2-yv4L3JyDl-FF-_0aX75nifrWEyIOAfWzSg=w157-h153-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQGyQ1BQ6c6JF3Beem5W33bLoLq-uk7II0rumtrTXk2YFrJvODQPRuEx5Yc22BjrzOuaXKG6_Ddksul2twHXROwXVyAOOBRL1D1PSGKLozE9xvkirQdGvsM9iClZ1gnqz9uGHU8GIw=w32-h32-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHn8m6dt1WXrB-pFvE22W9ZD3MZpwvas__5-Sof6NpiYferZbpvNu5Aml_YGOMduCi7Y9_tf93VSIDnu2oKV5GMnKEXV7U85S39KeptszDAj8xMzkpL7CvXkS6hkwOc_BgNunx_=w32-h32-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQGsKsm_1G05izA7naCG6Q1hsdUF0VUhcfs51z3windEcD01NCUKpx3-BiXshH6aqSrj8TSpo9-dD3B_otoLFw1KF2A91Tk3mT4NXsKDcD1z0yu-eMHz1YJNF6JGAmu3NJ42B0nTkQ=w148-h146-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQEtl5zuOtb_cA6fpQyNnt9e5INabmq_FZMkK488EftEzGUJajkvkoTB-e5mejK30HeRvSeUVhTDSuzGymjIbpol5rahcaCJrbz8nHTbUyy7LImqRc2bjtn5A3JW6egc7KItNDUG=w148-h146-v0
+Sura R. Sheriff
+196
+(a) (b) (c)
+Figure 10: Gray scale Lena Image Extraction Process
+(a) Watermarked Image
+(b) Original Image
+(c) Watermark
+Fig. 11 shows the program results which displayed the colored original image
+and the watermark image, then obtained the watermarked image. This figure shows the
+extraction watermark images where get successful execution.
+(a) (b) (c)
+Figure 11: Color Lena Image Embedded Process
+(a) Original Image
+(b)Watermark
+(c)Watermark Image
+The quality of the watermarked image is measured through PSNR('Peak Signal
+to Noise Ratio') and the MSE ('Mean Square Error') which is defined as below:
+$ MSE=(1/NM)*∑ kij-hostij … (6) $
+In the previous equation, M and N are the number of rows and columns in the input
+images; respectively .Then the block computes the PSNR using the following equation
+PSNR=10*log(R2/MSE) …(7)
+Where R is the maximum fluctuation in the input image data type. For example, if the
+input image has a double-precision floating-point data type, then R is 1. If it has an 8-bit
+unsigned integer data type, R is 255,
+The PSNR block computes the peak signal-to-noise ratio, in decibels, between
+two images. This ratio is often used as a quality measurement between the original and
+a compressed image.
+https://lh3.googleusercontent.com/notebooklm/AKXwDQEtpCU9rBLCLihptEkXq3eB95uTz3z6CaWIbVioZwg4ljhcQ6GnVBmWC-PN7WjW0FrbdUKHelNtsH7cvibs6_1J9P9UM5KFbg9sm-EYuW0t_ZtBcASDDfuKhU2TZCUJlZxiUsET=w211-h74-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQHZS1sJekX_LXNYHJJ4K7SyAl42R7gH6tX5OohxnoITifXpkSD5VEHq5UQ0jNxVR8LN-Xnd5MKrcT0ueixs_P3zFCKxYucVCFRHquxM1gqxrW7YMQoHcLzJBCQCJ79gurvdpBBw=w213-h225-v0
+https://lh3.googleusercontent.com/notebooklm/AKXwDQG9-SlEjmtpufSfx9p_GU3MXyFDZnqTOVfao9mHr7pR1AGXU4Egtuy0IoTr5NjLlmsjK5miAwLWTaiU0GzLdPW1t0uhAob-6NmpZghZiuWakA_NWjpAJhogpk-cmpmkRIhS7yQE=w73-h53-v0
+Digital Image Watermarking Using…
+197
+The Mean Square Error (MSE) and the Peak Signal to Noise Ratio (PSNR) are
+the two error metrics used to compare image compression quality. The MSE represents
+the cumulative squared error between the compressed and the original image, whereas
+PSNR represents a measure of the peak error. The lower the value of MSE, the lower
+the error. shows that inserting the watermarked image and the calculation of PSNR
+value . Also the extracted watermark is exactly similar to original watermark image.
+The performance of the proposed technique is tested in Matlab software version 7.4
+The PSNR for fig.9 was equal to 46.4357db, and the MSE was equal to 1.4774.
+The PSNR for fig. 11 was equal to 43.9351db, and the MSE was equal to 2.6277.
+To improve the watermark technique strength different attachment processes can be
+used for this improvement. In this research an attachment for type rotate used to attach
+watermarked image, the results ensure the watermark program strength. As shown in
+fig. 12.
+Figure 12: Gray scale Lena Image Attack
+(a) Rotation Corrected
+(b) Extract Attack
+From the above figure, it is clear that the rotation attachment success in
+watermark extraction, which prove the power of suggested SVD watermarking
+technique.
+4. Conclusion and Future Work
+This work applied the technique of linear algebra “singular value decomposition
+(SVD)"to digital image watermarking processing. The proposed algorithm depends on
+embedding the watermark into SVD of original image after dividing it into blocks.
+According to our experimental results, our proposed scheme is a good embedding
+because the difference between the original and watermarked images is in vision. In
+addition, can extract the watermark correctly even though the watermarked image.
+The experimental results show that the proposed algorithm found that SVD is effective
+method to execute the algorithm, each of them is carrying its own data (information) to
+contribute to the system .SVD has the advantage of providing a good method of
+embedding watermark .
+In the future work, the detection system will be extended to more transform domain
+watermarking approaches such as DWT-SVD and DCT -SVD. .
+https://lh3.googleusercontent.com/notebooklm/AKXwDQGS7YgUVOqWk4t_0-ducyizIOB4zMrwj7Y9lhxjynyVHEJ299BX5dWvL51Y8NwNmnDhHTTf9Ce14wr0eYOCgrIBj_Fm8YfqhhKOdf7zpaiAFpoTC-H0FfY4xsNdRWGC184zwHLa9A=w211-h74-v0
+ here is the paper 
