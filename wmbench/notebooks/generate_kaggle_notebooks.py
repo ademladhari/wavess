@@ -106,6 +106,8 @@ SKIP_RINSE4X = True
 # Download: upload each zip to Hugging Face (set HF_TOKEN in Kaggle Secrets)
 UPLOAD_TO_HF = True
 HF_REPO_ID = "YOUR_HF_USERNAME/wmbench-exports"  # dataset repo
+# Download completed attack zips from HF before running (skip finished attacks)
+RESUME_FROM_HF = True
 
 GENERATE_BASED = {gen_based}
 DIFF_BATCH = 4
@@ -144,12 +146,10 @@ try:
 except Exception:
     pass
 
-# Hugging Face token from Kaggle Secrets (Add-ons -> Secrets -> HF_TOKEN)
-try:
-    from kaggle_secrets import UserSecretsClient
-    os.environ.setdefault("HF_TOKEN", UserSecretsClient().get_secret("HF_TOKEN"))
-except Exception:
-    pass
+# Hugging Face token from Kaggle Secrets (Add-ons -> Secrets -> label HF_TOKEN, checkbox ON)
+from kaggle_secrets import UserSecretsClient
+os.environ["HF_TOKEN"] = UserSecretsClient().get_secret("HF_TOKEN")
+print("HF_TOKEN loaded:", bool(os.environ.get("HF_TOKEN")))
 '''
 
     load_common_py = '''def _load_kaggle_common(waves_root):
@@ -181,6 +181,7 @@ _common = _load_kaggle_common(WAVES_ROOT)
 GPU_ATTACKS = _common.GPU_ATTACKS
 DIST_ATTACKS = _common.DIST_ATTACKS
 run_per_attack_with_zips = _common.run_per_attack_with_zips
+restore_from_hf_exports = _common.restore_from_hf_exports
 zip_full_results = _common.zip_full_results
 upload_to_huggingface = _common.upload_to_huggingface
 
@@ -209,8 +210,9 @@ entries = run_per_attack_with_zips(
     output_dir=out,
     attack_names=attacks,
     export_dir=exp,
-    hf_repo_id=HF_REPO_ID if UPLOAD_TO_HF else None,
+    hf_repo_id=HF_REPO_ID if (UPLOAD_TO_HF or RESUME_FROM_HF) else None,
     upload_each=UPLOAD_TO_HF,
+    resume_from_hf=RESUME_FROM_HF,
     images=images,
     negatives=negatives,
     generate_based=GENERATE_BASED,
