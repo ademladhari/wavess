@@ -3,9 +3,10 @@ from __future__ import annotations
 import glob
 import hashlib
 import json
+import multiprocessing as mp
 import os
 import pickle
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 import numpy as np
 from PIL import Image
@@ -100,6 +101,100 @@ def _neg_cache_path(scores_root: str, method: str, blind_detect: bool) -> str:
     return os.path.join(scores_root, f"_neg_cache_{safe_method}_{mode}.json")
 
 
+def _tree_ring_detect_gpu_ids() -> list[str]:
+    """
+    Optional multi-GPU override for Tree-Ring detect path.
+    Example: WMBENCH_TREE_RING_DETECT_GPUS=0,1
+    """
+    raw = os.environ.get("WMBENCH_TREE_RING_DETECT_GPUS", "").strip()
+    if not raw:
+        return []
+    out: list[str] = []
+    for tok in raw.split(","):
+        t = tok.strip()
+        if not t:
+            continue
+        if t.lower().startswith("cuda:"):
+            t = t.split(":", 1)[1].strip()
+        if t and t not in out:
+            out.append(t)
+    return out
+
+
+def _tree_ring_detect_worker(
+    image_paths: list[str],
+    *,
+    blind_detect: bool,
+    originals_dir: str,
+    visible_gpu: str,
+) -> list[tuple[str, float]]:
+    # Hard-pin this worker to a concrete CUDA device id.
+    os.environ["WMBENCH_TREE_RING_DEVICE"] = f"cuda:{visible_gpu}"
+    os.environ["WMBENCH_TREE_RING_INVERT_DEVICE"] = f"cuda:{visible_gpu}"
+
+    from wmbench.watermarks import get_adapter
+
+    adapter = get_adapter("tree-ring")
+    scores: list[tuple[str, float]] = []
+    for p in image_paths:
+        with Image.open(p) as im:
+            img = im.convert("RGB")
+        if blind_detect:
+            sc = float(adapter.detect(img, None, meta=None, blind=True))
+        else:
+            orig_path = os.path.join(originals_dir, os.path.basename(p))
+            with Image.open(orig_path) as oi:
+                oimg = oi.convert("RGB")
+            sc = float(adapter.detect(img, oimg, meta=None, blind=False))
+        scores.append((p, sc))
+    return scores
+
+
+def _tree_ring_score_paths_multi_gpu(
+    paths: list[str],
+    *,
+    blind_detect: bool,
+    originals_dir: str,
+    gpu_ids: list[str],
+    desc: str,
+) -> list[float]:
+    """
+    Score paths with Tree-Ring detector across multiple GPUs.
+    Returns scores in the same order as `paths`.
+    """
+    if not paths:
+        return []
+    if len(gpu_ids) < 2:
+        raise ValueError("multi-gpu scoring requires at least 2 GPU ids")
+
+    chunks: list[tuple[str, list[str]]] = []
+    for i, gid in enumerate(gpu_ids):
+        chunk = paths[i:: len(gpu_ids)]
+        if chunk:
+            chunks.append((gid, chunk))
+    if len(chunks) < 2:
+        raise ValueError("insufficient non-empty path chunks for multi-gpu scoring")
+
+    by_path: dict[str, float] = {}
+    mp_ctx = mp.get_context("spawn")
+    with ProcessPoolExecutor(max_workers=len(chunks), mp_context=mp_ctx) as ex:
+        futs = [
+            ex.submit(
+                _tree_ring_detect_worker,
+                chunk,
+                blind_detect=blind_detect,
+                originals_dir=originals_dir,
+                visible_gpu=gid,
+            )
+            for gid, chunk in chunks
+        ]
+        for fut in tqdm(futs, total=len(futs), desc=f"{desc}-workers"):
+            for p, sc in fut.result():
+                by_path[p] = float(sc)
+
+    return [float(by_path[p]) for p in paths]
+
+
 def tpr_at_fpr(positive: np.ndarray, negative: np.ndarray, fpr_target: float = 0.001) -> float:
     """TPR at threshold = (1 - fpr_target) quantile of negative scores (99.9th pct for 0.1% FPR)."""
     if negative.size == 0:
@@ -164,6 +259,7 @@ def run_detect_stage(
     cache_path = _neg_cache_path(scores_root, adapter.name, blind_detect)
     neg_scores: list[float] = []
     cache_loaded = False
+    tree_ring_gpus = _tree_ring_detect_gpu_ids() if adapter.name == "tree-ring" else []
     if os.path.isfile(cache_path):
         try:
             with open(cache_path, encoding="utf-8") as cf:
@@ -174,28 +270,50 @@ def run_detect_stage(
         except Exception:
             cache_loaded = False
     if not cache_loaded:
-        for i, p in enumerate(tqdm(neg_paths, desc=f"neg/{adapter.name}")):
-            with Image.open(p) as im:
-                neg = im.convert("RGB")
-            if blind_detect:
-                if adapter.name == "svd":
-                    key_meta = svd_neg_payload_bank[i % len(svd_neg_payload_bank)]
-                    neg_scores.append(float(adapter.detect(neg, None, meta=key_meta, blind=True)))
+        used_tree_ring_mgpu = False
+        if adapter.name == "tree-ring" and len(tree_ring_gpus) > 1:
+            try:
+                print(
+                    f"tree-ring detect multi-GPU enabled for neg cache: {tree_ring_gpus}",
+                    flush=True,
+                )
+                neg_scores = _tree_ring_score_paths_multi_gpu(
+                    neg_paths,
+                    blind_detect=blind_detect,
+                    originals_dir=originals_dir,
+                    gpu_ids=tree_ring_gpus,
+                    desc=f"neg/{adapter.name}",
+                )
+                used_tree_ring_mgpu = True
+            except Exception as e:
+                print(
+                    f"tree-ring multi-GPU neg detect failed ({e!r}); falling back to single-process detect.",
+                    flush=True,
+                )
+                neg_scores = []
+        if not used_tree_ring_mgpu:
+            for i, p in enumerate(tqdm(neg_paths, desc=f"neg/{adapter.name}")):
+                with Image.open(p) as im:
+                    neg = im.convert("RGB")
+                if blind_detect:
+                    if adapter.name == "svd":
+                        key_meta = svd_neg_payload_bank[i % len(svd_neg_payload_bank)]
+                        neg_scores.append(float(adapter.detect(neg, None, meta=key_meta, blind=True)))
+                    else:
+                        neg_scores.append(float(adapter.detect(neg, None, meta=None, blind=True)))
                 else:
-                    neg_scores.append(float(adapter.detect(neg, None, meta=None, blind=True)))
-            else:
-                orig_path = os.path.join(originals_dir, os.path.basename(p))
-                if not os.path.isfile(orig_path):
-                    raise FileNotFoundError(
-                        "Negative image does not have a matching original by basename for calibration: "
-                        f"{os.path.basename(p)!r} (expected original at {orig_path})"
-                    )
-                with Image.open(orig_path) as oi:
-                    orig = oi.convert("RGB")
-                neg_meta = None
-                if adapter.name == "dwt-dct-svd":
-                    neg_meta = dwt_dct_svd_neg_payload_bank[i % len(dwt_dct_svd_neg_payload_bank)]
-                neg_scores.append(float(adapter.detect(neg, orig, meta=neg_meta, blind=False)))
+                    orig_path = os.path.join(originals_dir, os.path.basename(p))
+                    if not os.path.isfile(orig_path):
+                        raise FileNotFoundError(
+                            "Negative image does not have a matching original by basename for calibration: "
+                            f"{os.path.basename(p)!r} (expected original at {orig_path})"
+                        )
+                    with Image.open(orig_path) as oi:
+                        orig = oi.convert("RGB")
+                    neg_meta = None
+                    if adapter.name == "dwt-dct-svd":
+                        neg_meta = dwt_dct_svd_neg_payload_bank[i % len(dwt_dct_svd_neg_payload_bank)]
+                    neg_scores.append(float(adapter.detect(neg, orig, meta=neg_meta, blind=False)))
         try:
             os.makedirs(scores_root, exist_ok=True)
             with open(cache_path, "w", encoding="utf-8") as cf:
@@ -257,6 +375,26 @@ def run_detect_stage(
                     it = ex.map(_score_path, atk_paths)
                     for sc in tqdm(it, total=len(atk_paths), desc=f"scores/{attack_name}/{stren_tag}"):
                         pos_scores.append(float(sc))
+            elif adapter.name == "tree-ring" and len(tree_ring_gpus) > 1:
+                try:
+                    print(
+                        f"tree-ring detect multi-GPU enabled for scores/{attack_name}/{stren_tag}: {tree_ring_gpus}",
+                        flush=True,
+                    )
+                    pos_scores = _tree_ring_score_paths_multi_gpu(
+                        atk_paths,
+                        blind_detect=blind_detect,
+                        originals_dir=originals_dir,
+                        gpu_ids=tree_ring_gpus,
+                        desc=f"scores/{attack_name}/{stren_tag}",
+                    )
+                except Exception as e:
+                    print(
+                        f"tree-ring multi-GPU scores failed ({e!r}); falling back to single-process detect.",
+                        flush=True,
+                    )
+                    for ap in tqdm(atk_paths, desc=f"scores/{attack_name}/{stren_tag}"):
+                        pos_scores.append(_score_path(ap))
             else:
                 for ap in tqdm(atk_paths, desc=f"scores/{attack_name}/{stren_tag}"):
                     pos_scores.append(_score_path(ap))

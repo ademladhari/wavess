@@ -75,10 +75,12 @@ class TreeRingAdapter(WatermarkAdapter):
         self._cfg = cfg
 
         self._prompt = str(prompt or os.environ.get("WMBENCH_TREE_RING_PROMPT", "a photo"))
+        # Optional explicit device override, useful for multi-process multi-GPU detect workers.
+        model_device = (os.environ.get("WMBENCH_TREE_RING_DEVICE") or str(cfg.model.device)).strip() or str(cfg.model.device)
 
         self._generator = TreeRingGenerator(
             model_id=cfg.model.model_id,
-            device=cfg.model.device,
+            device=model_device,
             dtype=cfg.model.dtype,
             num_inference_steps=cfg.model.num_inference_steps,
             guidance_scale=cfg.model.guidance_scale,
@@ -90,7 +92,7 @@ class TreeRingAdapter(WatermarkAdapter):
             "float32": torch.float32,
             "bfloat16": torch.bfloat16,
         }.get(inv_dtype_name, torch.float16)
-        self._inv_device = os.environ.get("WMBENCH_TREE_RING_INVERT_DEVICE", cfg.model.device).strip() or cfg.model.device
+        self._inv_device = os.environ.get("WMBENCH_TREE_RING_INVERT_DEVICE", model_device).strip() or model_device
         # Use the same already-loaded SD pipeline for inversion to avoid a second
         # from_pretrained load (the Windows crash path).
         self._inverter = DDIMInverter(
@@ -104,7 +106,7 @@ class TreeRingAdapter(WatermarkAdapter):
             cfg.watermark.height,
             cfg.watermark.width,
             cfg.watermark.radius,
-            device=cfg.model.device,
+            device=model_device,
         )
         self._key = generate_key_material(
             channels=cfg.watermark.channels,
@@ -113,7 +115,7 @@ class TreeRingAdapter(WatermarkAdapter):
             mask=self._mask,
             variant=cfg.watermark.key_variant,
             seed=cfg.watermark.seed,
-            device=cfg.model.device,
+            device=model_device,
         )
         self._detect_watermark = detect_watermark
 
