@@ -54,6 +54,9 @@ dwt/results/
 !flexible/checkpoints/
 !flexible/checkpoints/**
 !flexible/checkpoints/**/*.pt
+!ROBIN/ckpts/
+!ROBIN/ckpts/**
+!ROBIN/ckpts/**/*.pt
 inception-2015-12-05.pt
 
 # Logs / scratch
