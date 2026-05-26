@@ -63,6 +63,32 @@ SSL_ROOT = Path("/kaggle/working/waves/ssl")
 os.environ["WMBENCH_SSL_ROOT"] = str(SSL_ROOT)
 print("SSL_ROOT:", SSL_ROOT, "exists:", SSL_ROOT.exists())""",
     },
+    "robin": {
+        "title": "wmbench — ROBIN",
+        "requirements": "requirements_colab_wmbench_flexible.txt",
+        "generate_based": True,
+        "extra_env_cell": """# ROBIN code + optimized watermark checkpoint
+import os
+from pathlib import Path
+
+ROBIN_ROOT = Path(os.environ.get("WMBENCH_ROBIN_ROOT", "/kaggle/working/waves/ROBIN"))
+os.environ["WMBENCH_ROBIN_ROOT"] = str(ROBIN_ROOT)
+
+# Point to ROBIN optimized watermark checkpoint (.pt with opt_wm and optional opt_acond)
+os.environ.setdefault("WMBENCH_ROBIN_WM_PATH", str(ROBIN_ROOT / "ckpts" / "optimized_wm.pt"))
+os.environ.setdefault("WMBENCH_ROBIN_PROMPT", "a photo")
+os.environ.setdefault("WMBENCH_ROBIN_W_CHANNEL", "3")
+os.environ.setdefault("WMBENCH_ROBIN_W_PATTERN", "ring")
+os.environ.setdefault("WMBENCH_ROBIN_W_UP_RADIUS", "30")
+os.environ.setdefault("WMBENCH_ROBIN_W_LOW_RADIUS", "5")
+os.environ.setdefault("WMBENCH_ROBIN_W_INJECTION", "complex")
+os.environ.setdefault("WMBENCH_ROBIN_W_MEASUREMENT", "l1_complex")
+os.environ.setdefault("WMBENCH_ROBIN_INFERENCE_STEPS", "50")
+os.environ.setdefault("WMBENCH_ROBIN_DETECT_STEPS", "50")
+os.environ.setdefault("WMBENCH_ROBIN_WATERMARK_STEPS", "35")
+print("ROBIN_ROOT:", ROBIN_ROOT, "exists:", ROBIN_ROOT.exists())
+print("WMBENCH_ROBIN_WM_PATH:", os.environ["WMBENCH_ROBIN_WM_PATH"])""",
+    },
     "tree-ring": {
         "title": "wmbench — Tree-Ring",
         "requirements": "requirements_colab_wmbench_flexible.txt",

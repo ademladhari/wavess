@@ -13,6 +13,7 @@ One notebook per watermark method. Each runs **attacks one-by-one** (`--resume`)
 | `wmbench_kaggle_dwt_dct_svd.ipynb` | `dwt-dct-svd` |
 | `wmbench_kaggle_flexible.ipynb` | `flexible` |
 | `wmbench_kaggle_ssl.ipynb` | `ssl` |
+| `wmbench_kaggle_robin.ipynb` | `robin` (`--generate-based`) |
 | `wmbench_kaggle_tree_ring.ipynb` | `tree-ring` (`--generate-based`) |
 
 Regenerate after editing the template:
@@ -28,6 +29,7 @@ py -3 wmbench/notebooks/generate_kaggle_notebooks.py
    - `images500` → set `IMAGES` in CONFIG
    - `negative500` → set `NEGATIVES`
    - Flexible: checkpoint dataset → `WMBENCH_FLEXIBLE_ROOT`
+   - ROBIN: optimized watermark checkpoint (`.pt`) → set `WMBENCH_ROBIN_WM_PATH`
 3. **Secrets**: `HF_TOKEN` (write token).
 4. CONFIG: set `HF_REPO_ID = "youruser/wmbench-exports"` (create empty dataset on HF first).
 5. GPU on, Internet on.

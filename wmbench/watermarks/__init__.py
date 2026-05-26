@@ -8,6 +8,7 @@ from wmbench.watermarks.dct_dwt import DCTDWTAdapter
 from wmbench.watermarks.dwt_dct_svd import DWTDCTSVDAdapter
 from wmbench.watermarks.dwt import DWTAdapter
 from wmbench.watermarks.flexible import FlexibleAdapter
+from wmbench.watermarks.robin import ROBINAdapter
 from wmbench.watermarks.tree_ring import TreeRingAdapter
 from wmbench.watermarks.ssl import SSLAdapter
 from wmbench.watermarks.svd import SVDAdapter
@@ -23,6 +24,7 @@ _ADAPTERS: dict[str, type[WatermarkAdapter]] = {
     "dwtdctsvd": DWTDCTSVDAdapter,
     "flexible": FlexibleAdapter,
     "flex": FlexibleAdapter,
+    "robin": ROBINAdapter,
     "tree-ring": TreeRingAdapter,
     "tree_ring": TreeRingAdapter,
     "treering": TreeRingAdapter,
@@ -50,6 +52,7 @@ __all__ = [
     "DWTDCTSVDAdapter",
     "DWTAdapter",
     "FlexibleAdapter",
+    "ROBINAdapter",
     "TreeRingAdapter",
     "SSLAdapter",
     "SVDAdapter",

@@ -124,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
         "--methods",
         nargs="+",
         required=True,
-        help="dct | dwt | svd | dct-dwt | dwt-dct-svd | flexible | ssl | tree-ring",
+        help="dct | dwt | svd | dct-dwt | dwt-dct-svd | flexible | ssl | robin | tree-ring",
     )
     p.add_argument("--images", required=False, help="Directory of originals (clean host images)")
     p.add_argument("--negatives", required=False, help="Directory of negative (unwatermarked) images for detection calibration")

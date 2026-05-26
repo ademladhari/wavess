@@ -6,7 +6,7 @@ import json
 import multiprocessing as mp
 import os
 import pickle
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
 import numpy as np
 from PIL import Image
@@ -18,6 +18,8 @@ from wmbench.watermarks.base import WatermarkAdapter
 
 
 _IMG_EXTS = (".png", ".jpg", ".jpeg", ".webp", ".bmp")
+_TREE_RING_WORKER_ADAPTER = None
+_TREE_RING_WORKER_DEVICE = None
 
 
 def _list_negative_image_paths(negatives_dir: str) -> list[str]:
@@ -122,21 +124,28 @@ def _tree_ring_detect_gpu_ids() -> list[str]:
 
 
 def _tree_ring_detect_worker(
-    image_paths: list[str],
+    items: list[tuple[int, str]],
     *,
     blind_detect: bool,
     originals_dir: str,
     visible_gpu: str,
-) -> list[tuple[str, float]]:
+) -> list[tuple[int, float]]:
+    global _TREE_RING_WORKER_ADAPTER, _TREE_RING_WORKER_DEVICE
+
     # Hard-pin this worker to a concrete CUDA device id.
-    os.environ["WMBENCH_TREE_RING_DEVICE"] = f"cuda:{visible_gpu}"
-    os.environ["WMBENCH_TREE_RING_INVERT_DEVICE"] = f"cuda:{visible_gpu}"
+    device = f"cuda:{visible_gpu}"
+    os.environ["WMBENCH_TREE_RING_DEVICE"] = device
+    os.environ["WMBENCH_TREE_RING_INVERT_DEVICE"] = device
 
-    from wmbench.watermarks import get_adapter
+    if _TREE_RING_WORKER_ADAPTER is None or _TREE_RING_WORKER_DEVICE != device:
+        from wmbench.watermarks import get_adapter
 
-    adapter = get_adapter("tree-ring")
-    scores: list[tuple[str, float]] = []
-    for p in image_paths:
+        _TREE_RING_WORKER_ADAPTER = get_adapter("tree-ring")
+        _TREE_RING_WORKER_DEVICE = device
+
+    adapter = _TREE_RING_WORKER_ADAPTER
+    scores: list[tuple[int, float]] = []
+    for idx, p in items:
         with Image.open(p) as im:
             img = im.convert("RGB")
         if blind_detect:
@@ -146,7 +155,7 @@ def _tree_ring_detect_worker(
             with Image.open(orig_path) as oi:
                 oimg = oi.convert("RGB")
             sc = float(adapter.detect(img, oimg, meta=None, blind=False))
-        scores.append((p, sc))
+        scores.append((idx, sc))
     return scores
 
 
@@ -167,17 +176,17 @@ def _tree_ring_score_paths_multi_gpu(
     if len(gpu_ids) < 2:
         raise ValueError("multi-gpu scoring requires at least 2 GPU ids")
 
-    chunks: list[tuple[str, list[str]]] = []
-    for i, gid in enumerate(gpu_ids):
-        chunk = paths[i:: len(gpu_ids)]
-        if chunk:
-            chunks.append((gid, chunk))
-    if len(chunks) < 2:
-        raise ValueError("insufficient non-empty path chunks for multi-gpu scoring")
+    chunk_size = max(1, int(os.environ.get("WMBENCH_TREE_RING_DETECT_CHUNK", "16") or "16"))
+    indexed_paths = list(enumerate(paths))
+    chunks: list[tuple[str, list[tuple[int, str]]]] = []
+    for start in range(0, len(indexed_paths), chunk_size):
+        chunk = indexed_paths[start : start + chunk_size]
+        gid = gpu_ids[(start // chunk_size) % len(gpu_ids)]
+        chunks.append((gid, chunk))
 
-    by_path: dict[str, float] = {}
+    scores = [0.0] * len(paths)
     mp_ctx = mp.get_context("spawn")
-    with ProcessPoolExecutor(max_workers=len(chunks), mp_context=mp_ctx) as ex:
+    with ProcessPoolExecutor(max_workers=len(gpu_ids), mp_context=mp_ctx) as ex:
         futs = [
             ex.submit(
                 _tree_ring_detect_worker,
@@ -188,11 +197,14 @@ def _tree_ring_score_paths_multi_gpu(
             )
             for gid, chunk in chunks
         ]
-        for fut in tqdm(futs, total=len(futs), desc=f"{desc}-workers"):
-            for p, sc in fut.result():
-                by_path[p] = float(sc)
+        with tqdm(total=len(paths), desc=desc, unit="img") as pbar:
+            for fut in as_completed(futs):
+                batch = fut.result()
+                for idx, sc in batch:
+                    scores[idx] = float(sc)
+                pbar.update(len(batch))
 
-    return [float(by_path[p]) for p in paths]
+    return scores
 
 
 def tpr_at_fpr(positive: np.ndarray, negative: np.ndarray, fpr_target: float = 0.001) -> float:
