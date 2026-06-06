@@ -55,10 +55,15 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
         tokenizer,
         unet,
         scheduler,
-        safety_checker,
-        feature_extractor,
-        requires_safety_checker: bool = True,
+        safety_checker=None,
+        feature_extractor=None,
+        requires_safety_checker: bool = False,
     ):
+        if isinstance(safety_checker, bool):
+            requires_safety_checker = safety_checker
+            safety_checker = None
+        if safety_checker is None:
+            requires_safety_checker = False
         super(ROBINStableDiffusionPipeline, self).__init__(vae,
                 text_encoder,
                 tokenizer,

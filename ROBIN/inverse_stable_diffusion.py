@@ -39,10 +39,16 @@ class InversableStableDiffusionPipeline(ROBINStableDiffusionPipeline):
         tokenizer,
         unet,
         scheduler,
-        safety_checker,
-        feature_extractor,
-        requires_safety_checker: bool = True,
+        safety_checker=None,
+        feature_extractor=None,
+        requires_safety_checker: bool = False,
     ):
+        # diffusers>=0.27 may pass safety_checker=False (bool); must be None or a module.
+        if isinstance(safety_checker, bool):
+            requires_safety_checker = safety_checker
+            safety_checker = None
+        if safety_checker is None:
+            requires_safety_checker = False
         super(InversableStableDiffusionPipeline, self).__init__(vae,
                 text_encoder,
                 tokenizer,

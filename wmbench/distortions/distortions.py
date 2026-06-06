@@ -19,7 +19,7 @@ distortion_strength_paras = dict(
     erasing=(0, 0.25),
     brightness=(1, 2),
     contrast=(1, 2),
-    blurring=(0, 20),
+    blurring=(0, 8),
     noise=(0, 0.1),
     compression=(90, 10),
 )
@@ -90,10 +90,13 @@ def apply_single_distortion(
 
     elif distortion_type == "erasing":
         scale = strength if strength is not None else random.uniform(*distortion_strength_paras["erasing"])
-        image_t = to_tensor([image], norm_type=None)
-        i, j, h, w, v = T.RandomErasing.get_params(image_t, scale=(scale, scale), ratio=(1, 1), value=[0])
-        distorted_tensor = F.erase(image_t, i, j, h, w, v)
-        distorted_image = to_pil(distorted_tensor, norm_type=None)[0]
+        if scale <= 0:
+            distorted_image = image.copy()
+        else:
+            image_t = to_tensor([image], norm_type=None)
+            i, j, h, w, v = T.RandomErasing.get_params(image_t, scale=(scale, scale), ratio=(1, 1), value=[0])
+            distorted_tensor = F.erase(image_t, i, j, h, w, v)
+            distorted_image = to_pil(distorted_tensor, norm_type=None)[0]
 
     elif distortion_type == "brightness":
         factor = strength if strength is not None else random.uniform(*distortion_strength_paras["brightness"])
@@ -104,8 +107,13 @@ def apply_single_distortion(
         distorted_image = ImageEnhance.Contrast(image).enhance(factor)
 
     elif distortion_type == "blurring":
-        kernel_size = int(strength) if strength is not None else random.uniform(*distortion_strength_paras["blurring"])
-        distorted_image = image.filter(ImageFilter.GaussianBlur(kernel_size))
+        # PIL GaussianBlur takes a radius (pixels), not a kernel size.
+        # radius=0 is a no-op; PIL accepts floats, so no int() truncation needed.
+        radius = float(strength) if strength is not None else random.uniform(*distortion_strength_paras["blurring"])
+        if radius <= 0:
+            distorted_image = image.copy()
+        else:
+            distorted_image = image.filter(ImageFilter.GaussianBlur(radius))
 
     elif distortion_type == "noise":
         std = strength if strength is not None else random.uniform(*distortion_strength_paras["noise"])

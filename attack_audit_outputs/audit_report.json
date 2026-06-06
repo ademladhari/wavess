@@ -1,0 +1,1029 @@
+{
+  "Dist-Rotation": {
+    "type": "rotation",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 0.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Rotation_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 11.25
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Rotation_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 22.5
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Rotation_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 33.75
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Rotation_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 45.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Rotation_s4.png"
+      }
+    ]
+  },
+  "Dist-RCrop": {
+    "type": "resizedcrop",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "resizedcrop",
+            "absolute": 1.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-RCrop_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "resizedcrop",
+            "absolute": 0.875
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-RCrop_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "resizedcrop",
+            "absolute": 0.75
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-RCrop_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "resizedcrop",
+            "absolute": 0.625
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-RCrop_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "resizedcrop",
+            "absolute": 0.5
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-RCrop_s4.png"
+      }
+    ]
+  },
+  "Dist-Erase": {
+    "type": "erasing",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "erasing",
+            "absolute": 0.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Erase_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "erasing",
+            "absolute": 0.0625
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Erase_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "erasing",
+            "absolute": 0.125
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Erase_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "erasing",
+            "absolute": 0.1875
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Erase_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "erasing",
+            "absolute": 0.25
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Erase_s4.png"
+      }
+    ]
+  },
+  "Dist-Bright": {
+    "type": "brightness",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 1.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Bright_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 1.25
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Bright_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 1.5
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Bright_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 1.75
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Bright_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 2.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Bright_s4.png"
+      }
+    ]
+  },
+  "Dist-Contrast": {
+    "type": "contrast",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "contrast",
+            "absolute": 1.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Contrast_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "contrast",
+            "absolute": 1.25
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Contrast_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "contrast",
+            "absolute": 1.5
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Contrast_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "contrast",
+            "absolute": 1.75
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Contrast_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "contrast",
+            "absolute": 2.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Contrast_s4.png"
+      }
+    ]
+  },
+  "Dist-Blur": {
+    "type": "blurring",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 0.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Blur_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 5.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Blur_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 10.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Blur_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 15.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Blur_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 20.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Blur_s4.png"
+      }
+    ]
+  },
+  "Dist-Noise": {
+    "type": "noise",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "noise",
+            "absolute": 0.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Noise_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "noise",
+            "absolute": 0.025
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Noise_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "noise",
+            "absolute": 0.05
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Noise_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "noise",
+            "absolute": 0.07500000000000001
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Noise_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "noise",
+            "absolute": 0.1
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-Noise_s4.png"
+      }
+    ]
+  },
+  "Dist-JPEG": {
+    "type": "jpeg",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "compression",
+            "absolute": 90.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-JPEG_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "compression",
+            "absolute": 70.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-JPEG_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "compression",
+            "absolute": 50.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-JPEG_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "compression",
+            "absolute": 30.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-JPEG_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "compression",
+            "absolute": 10.0
+          }
+        ],
+        "output": "attack_audit_outputs\\Dist-JPEG_s4.png"
+      }
+    ]
+  },
+  "DistCom-Geo": {
+    "type": "combo_geometric",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 0.0
+          },
+          {
+            "step": 1,
+            "distortion": "resizedcrop",
+            "absolute": 1.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Geo_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 11.25
+          },
+          {
+            "step": 1,
+            "distortion": "resizedcrop",
+            "absolute": 0.875
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Geo_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 22.5
+          },
+          {
+            "step": 1,
+            "distortion": "resizedcrop",
+            "absolute": 0.75
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Geo_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 33.75
+          },
+          {
+            "step": 1,
+            "distortion": "resizedcrop",
+            "absolute": 0.625
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Geo_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 45.0
+          },
+          {
+            "step": 1,
+            "distortion": "resizedcrop",
+            "absolute": 0.5
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Geo_s4.png"
+      }
+    ]
+  },
+  "DistCom-Photo": {
+    "type": "combo_photometric",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 1.0
+          },
+          {
+            "step": 1,
+            "distortion": "contrast",
+            "absolute": 1.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Photo_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 1.25
+          },
+          {
+            "step": 1,
+            "distortion": "contrast",
+            "absolute": 1.25
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Photo_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 1.5
+          },
+          {
+            "step": 1,
+            "distortion": "contrast",
+            "absolute": 1.5
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Photo_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 1.75
+          },
+          {
+            "step": 1,
+            "distortion": "contrast",
+            "absolute": 1.75
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Photo_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "brightness",
+            "absolute": 2.0
+          },
+          {
+            "step": 1,
+            "distortion": "contrast",
+            "absolute": 2.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Photo_s4.png"
+      }
+    ]
+  },
+  "DistCom-Deg": {
+    "type": "combo_degradation",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 0.0
+          },
+          {
+            "step": 1,
+            "distortion": "compression",
+            "absolute": 90.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Deg_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 5.0
+          },
+          {
+            "step": 1,
+            "distortion": "compression",
+            "absolute": 70.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Deg_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 10.0
+          },
+          {
+            "step": 1,
+            "distortion": "compression",
+            "absolute": 50.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Deg_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 15.0
+          },
+          {
+            "step": 1,
+            "distortion": "compression",
+            "absolute": 30.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Deg_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "blurring",
+            "absolute": 20.0
+          },
+          {
+            "step": 1,
+            "distortion": "compression",
+            "absolute": 10.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-Deg_s4.png"
+      }
+    ]
+  },
+  "DistCom-All": {
+    "type": "combo_all",
+    "strengths": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "results": [
+      {
+        "relative": 0.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 0.0
+          },
+          {
+            "step": 1,
+            "distortion": "brightness",
+            "absolute": 1.0
+          },
+          {
+            "step": 2,
+            "distortion": "noise",
+            "absolute": 0.0
+          },
+          {
+            "step": 3,
+            "distortion": "blurring",
+            "absolute": 0.0
+          },
+          {
+            "step": 4,
+            "distortion": "compression",
+            "absolute": 90.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-All_s0.png"
+      },
+      {
+        "relative": 0.25,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 11.25
+          },
+          {
+            "step": 1,
+            "distortion": "brightness",
+            "absolute": 1.25
+          },
+          {
+            "step": 2,
+            "distortion": "noise",
+            "absolute": 0.025
+          },
+          {
+            "step": 3,
+            "distortion": "blurring",
+            "absolute": 5.0
+          },
+          {
+            "step": 4,
+            "distortion": "compression",
+            "absolute": 70.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-All_s1.png"
+      },
+      {
+        "relative": 0.5,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 22.5
+          },
+          {
+            "step": 1,
+            "distortion": "brightness",
+            "absolute": 1.5
+          },
+          {
+            "step": 2,
+            "distortion": "noise",
+            "absolute": 0.05
+          },
+          {
+            "step": 3,
+            "distortion": "blurring",
+            "absolute": 10.0
+          },
+          {
+            "step": 4,
+            "distortion": "compression",
+            "absolute": 50.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-All_s2.png"
+      },
+      {
+        "relative": 0.75,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 33.75
+          },
+          {
+            "step": 1,
+            "distortion": "brightness",
+            "absolute": 1.75
+          },
+          {
+            "step": 2,
+            "distortion": "noise",
+            "absolute": 0.07500000000000001
+          },
+          {
+            "step": 3,
+            "distortion": "blurring",
+            "absolute": 15.0
+          },
+          {
+            "step": 4,
+            "distortion": "compression",
+            "absolute": 30.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-All_s3.png"
+      },
+      {
+        "relative": 1.0,
+        "absolute_steps": [
+          {
+            "step": 0,
+            "distortion": "rotation",
+            "absolute": 45.0
+          },
+          {
+            "step": 1,
+            "distortion": "brightness",
+            "absolute": 2.0
+          },
+          {
+            "step": 2,
+            "distortion": "noise",
+            "absolute": 0.1
+          },
+          {
+            "step": 3,
+            "distortion": "blurring",
+            "absolute": 20.0
+          },
+          {
+            "step": 4,
+            "distortion": "compression",
+            "absolute": 10.0
+          }
+        ],
+        "output": "attack_audit_outputs\\DistCom-All_s4.png"
+      }
+    ]
+  },
+  "Regen-Diff": {
+    "type": "unknown",
+    "strengths": [
+      40,
+      80,
+      120,
+      160,
+      200
+    ],
+    "results": [],
+    "note": "Non-distortion attack; skipped"
+  },
+  "Regen-VAE": {
+    "type": "unknown",
+    "strengths": [
+      1,
+      2,
+      4,
+      5,
+      7
+    ],
+    "results": [],
+    "note": "Non-distortion attack; skipped"
+  },
+  "Rinse-2xDiff": {
+    "type": "unknown",
+    "strengths": [
+      20,
+      40,
+      60,
+      80,
+      100
+    ],
+    "results": [],
+    "note": "Non-distortion attack; skipped"
+  },
+  "Rinse-4xDiff": {
+    "type": "unknown",
+    "strengths": [
+      10,
+      20,
+      30,
+      40,
+      50
+    ],
+    "results": [],
+    "note": "Non-distortion attack; skipped"
+  }
+}

@@ -145,10 +145,14 @@ class ROBINAdapter(WatermarkAdapter):
         self._opt_wm = ckpt["opt_wm"].to(self._device)
 
         scheduler = DPMSolverMultistepScheduler.from_pretrained(self._model_id, subfolder="scheduler")
+        # Newer diffusers rejects bool safety_checker in register_modules; disable explicitly.
         self._pipe = InversableStableDiffusionPipeline.from_pretrained(
             self._model_id,
             scheduler=scheduler,
             torch_dtype=torch.float32,
+            safety_checker=None,
+            feature_extractor=None,
+            requires_safety_checker=False,
         ).to(self._device)
 
         self._text_embeddings = self._pipe.get_text_embedding("")

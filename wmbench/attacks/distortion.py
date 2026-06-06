@@ -35,14 +35,20 @@ class _DistortionAttack(Attack):
         self._inner = inner
         self.strengths = strengths
 
-    def apply(self, image: Image.Image, strength: float | int) -> Image.Image:
+    def apply(self, image: Image.Image, strength: float | int, *, image_index: int = 0) -> Image.Image:
         rel = float(strength)
         out = image.convert("RGB")
-        base_seed = 0
-        for sid, (_, dtype) in enumerate(_chain_steps(self._inner)):
+        steps = _chain_steps(self._inner)
+        n_steps = len(steps)
+        for sid, (_, dtype) in enumerate(steps):
             abs_s = relative_strength_to_absolute(rel, dtype)
-            out = apply_single_distortion(out, dtype, abs_s, distortion_seed=base_seed + sid)
+            # Unique seed per (image, step): different images get different crop/erase/noise positions.
+            seed = image_index * n_steps + sid
+            out = apply_single_distortion(out, dtype, abs_s, distortion_seed=seed)
         return out
+
+    def apply_batch(self, images: list[Image.Image], strength: float | int) -> list[Image.Image]:
+        return [self.apply(im, strength, image_index=i) for i, im in enumerate(images)]
 
 
 def build_single_distortion_attack(display_name: str, inner: str, strengths: list[float]) -> Attack:
