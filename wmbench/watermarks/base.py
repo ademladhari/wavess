@@ -15,6 +15,15 @@ class WatermarkAdapter(ABC):
     def embed(self, image: Image.Image) -> Image.Image:
         """Return watermarked image (RGB)."""
 
+    def embed_batch(self, images: list[Image.Image]) -> list[Image.Image]:
+        """Embed a minibatch. Override for GPU-batched or parallel embed paths."""
+        return [self.embed(im) for im in images]
+
+    @property
+    def embed_meta_shared(self) -> bool:
+        """When True, one sidecar payload applies to every image in an embed batch."""
+        return False
+
     @abstractmethod
     def detect(
         self,

@@ -162,6 +162,10 @@ class SSLAdapter(WatermarkAdapter):
     def name(self) -> str:
         return "ssl"
 
+    @property
+    def embed_meta_shared(self) -> bool:
+        return True
+
     def _payload(self) -> dict:
         payload = {"mode": self._mode}
         if self._mode == "multi_bit" and self._message is not None:

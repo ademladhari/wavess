@@ -126,6 +126,10 @@ class TreeRingAdapter(WatermarkAdapter):
     def name(self) -> str:
         return "tree-ring"
 
+    @property
+    def embed_meta_shared(self) -> bool:
+        return True
+
     def payload_for_meta(self) -> dict | None:
         # Tree-Ring key material is deterministic from config+seed; no per-image payload needed.
         return {
@@ -135,14 +139,24 @@ class TreeRingAdapter(WatermarkAdapter):
             "key_variant": str(self._cfg.watermark.key_variant),
         }
 
-    def embed(self, image: Image.Image) -> Image.Image:
-        del image  # Tree-Ring embedding is generation-time latent injection.
+    def _generate_one(self) -> Image.Image:
         out = self._generator.generate(
             prompts=[self._prompt],
             key=self._key,
             seed=self._cfg.watermark.seed,
         )
         return out.images[0].convert("RGB")
+
+    def embed_batch(self, images: list[Image.Image]) -> list[Image.Image]:
+        """One SD generation per batch chunk; replicate (same seed/key as repeated ``embed``)."""
+        if not images:
+            return []
+        one = self._generate_one()
+        return [one.copy() for _ in images]
+
+    def embed(self, image: Image.Image) -> Image.Image:
+        del image  # Tree-Ring embedding is generation-time latent injection.
+        return self._generate_one()
 
     def detect(
         self,

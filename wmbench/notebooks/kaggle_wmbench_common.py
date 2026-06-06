@@ -67,6 +67,7 @@ def run_benchmark(
     blind_detect: bool = True,
     device: str = "cuda",
     diff_batch: int = 4,
+    embed_batch: int = 8,  # one SD forward per chunk for GPU methods; CPU parallel workers
     lpips_batch: int = 16,
     skip_rinse4x: bool = True,
     resume: bool = True,
@@ -86,6 +87,8 @@ def run_benchmark(
         *attacks,
         "--diffusion-attack-batch-size",
         str(diff_batch),
+        "--embed-batch-size",
+        str(embed_batch),
         "--lpips-batch-size",
         str(lpips_batch),
         "--blind-detect",

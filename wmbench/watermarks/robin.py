@@ -170,6 +170,10 @@ class ROBINAdapter(WatermarkAdapter):
     def name(self) -> str:
         return "robin"
 
+    @property
+    def embed_meta_shared(self) -> bool:
+        return True
+
     def payload_for_meta(self) -> dict | None:
         return {
             "model_id": self._model_id,
@@ -180,7 +184,7 @@ class ROBINAdapter(WatermarkAdapter):
             "w_mask_shape": str(self._args.w_mask_shape),
         }
 
-    def embed(self, image: Image.Image) -> Image.Image:
+    def _embed_one(self, image: Image.Image) -> Image.Image:
         from optim_utils import set_random_seed
 
         seed = _seed_from_image(image, base_seed=self._base_seed)
@@ -207,6 +211,50 @@ class ROBINAdapter(WatermarkAdapter):
             opt_acond=self._opt_acond,
         )
         return outputs.images[0].convert("RGB")
+
+    def embed_batch(self, images: list[Image.Image]) -> list[Image.Image]:
+        """Batched ROBIN pipe forward with per-image latents (seed from image bytes)."""
+        if not images:
+            return []
+        if len(images) == 1:
+            return [self._embed_one(images[0])]
+
+        from optim_utils import set_random_seed
+
+        latents_list: list[torch.Tensor] = []
+        for image in images:
+            seed = _seed_from_image(image, base_seed=self._base_seed)
+            set_random_seed(seed)
+            generator = torch.Generator(device=self._device).manual_seed(seed)
+            latents_list.append(
+                self._pipe.get_random_latents(
+                    height=self._image_length,
+                    width=self._image_length,
+                    generator=generator,
+                )
+            )
+        init_latents = torch.cat(latents_list, dim=0)
+        try:
+            outputs = self._pipe(
+                self._prompt,
+                guidance_scale=self._guidance_scale,
+                num_inference_steps=self._num_inference_steps,
+                height=self._image_length,
+                width=self._image_length,
+                latents=init_latents,
+                watermarking_mask=self._wm_mask,
+                watermarking_steps=self._watermarking_steps,
+                args=self._args,
+                gt_patch=self._opt_wm,
+                lguidance=self._guidance_scale,
+                opt_acond=self._opt_acond,
+            )
+            return [im.convert("RGB") for im in outputs.images]
+        except Exception:
+            return [self._embed_one(im) for im in images]
+
+    def embed(self, image: Image.Image) -> Image.Image:
+        return self._embed_one(image)
 
     def detect(
         self,

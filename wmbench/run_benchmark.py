@@ -184,6 +184,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Images per attack forward pass (for diffusion/Rinse this enables VRAM-heavy batching).",
     )
     p.add_argument(
+        "--embed-batch-size",
+        type=int,
+        default=8,
+        help=(
+            "Embed chunk size. GPU methods: one diffusion forward per chunk (flexible/tree-ring "
+            "replicate; robin batched). CPU methods: parallel per-image embed up to this many workers."
+        ),
+    )
+    p.add_argument(
         "--lpips-batch-size",
         type=int,
         default=1,
@@ -287,7 +296,13 @@ def main(argv: list[str] | None = None) -> int:
             except Exception:
                 pass
         t0 = time.perf_counter()
-        run_embed(adapter, image_paths, wm_dir, resume=args.resume)
+        run_embed(
+            adapter,
+            image_paths,
+            wm_dir,
+            resume=args.resume,
+            embed_batch_size=args.embed_batch_size,
+        )
         if args.profile_stages:
             _print_stage_profile(f"{m}/embed", time.perf_counter() - t0, device)
 

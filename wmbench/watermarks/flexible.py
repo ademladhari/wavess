@@ -161,10 +161,15 @@ class FlexibleAdapter(WatermarkAdapter):
         gen = torch.Generator(device="cpu").manual_seed(int(seed))
         self._w = torch.randint(0, 2, (1, self._n_bits), generator=gen).to(self._device, dtype=torch.float32)
         self._last_payload: dict | None = None
+        self._z_init_cached: torch.Tensor | None = None
 
     @property
     def name(self) -> str:
         return "flexible"
+
+    @property
+    def embed_meta_shared(self) -> bool:
+        return True
 
     def payload_for_meta(self) -> dict | None:
         return self._last_payload
@@ -172,29 +177,54 @@ class FlexibleAdapter(WatermarkAdapter):
     def _payload(self) -> dict:
         return {"w_bits": self._w.detach().cpu().numpy().astype(np.uint8), "n_bits": int(self._n_bits)}
 
-    def embed(self, image: Image.Image) -> Image.Image:
-        del image  # Flexible embedding is performed via the method's own latent->SDM generation path.
+    def _get_z_init(self) -> torch.Tensor:
+        """Cached encoder output for fixed payload ``_w`` (same for every embed)."""
+        if self._z_init_cached is None:
+            with torch.no_grad():
+                z_img, _, _ = self._enc(self._w)
+                self._z_init_cached = z_img.to(self._sdm.dtype)
+        return self._z_init_cached
+
+    @staticmethod
+    def _sdm_tensors_to_pil(image_tensor: torch.Tensor) -> list[Image.Image]:
+        out: list[Image.Image] = []
+        for i in range(int(image_tensor.shape[0])):
+            arr = (
+                image_tensor[i]
+                .detach()
+                .clamp(0.0, 1.0)
+                .mul(255.0)
+                .round()
+                .to(torch.uint8)
+                .permute(1, 2, 0)
+                .cpu()
+                .numpy()
+            )
+            out.append(Image.fromarray(arr, mode="RGB"))
+        return out
+
+    def _generate_one(self) -> Image.Image:
+        """Single SD forward (inputs ignored; payload fixed by ``_w``)."""
         with torch.no_grad():
-            z_img, _, _ = self._enc(self._w)
             out = self._sdm.generate(
-                z_init=z_img.to(self._sdm.dtype),
+                z_init=self._get_z_init(),
                 prompt=self._prompt,
                 num_inference_steps=self._steps,
                 guidance_scale=self._guidance,
             )
-        arr = (
-            out.image[0]
-            .detach()
-            .clamp(0.0, 1.0)
-            .mul(255.0)
-            .round()
-            .to(torch.uint8)
-            .permute(1, 2, 0)
-            .cpu()
-            .numpy()
-        )
         self._last_payload = self._payload()
-        return Image.fromarray(arr, mode="RGB")
+        return self._sdm_tensors_to_pil(out.image)[0]
+
+    def embed_batch(self, images: list[Image.Image]) -> list[Image.Image]:
+        """One SD generation per batch chunk; replicate for each slot (same as repeated ``embed``)."""
+        if not images:
+            return []
+        one = self._generate_one()
+        return [one.copy() for _ in images]
+
+    def embed(self, image: Image.Image) -> Image.Image:
+        del image  # Flexible embedding is performed via the method's own latent->SDM generation path.
+        return self._generate_one()
 
     def detect(
         self,
