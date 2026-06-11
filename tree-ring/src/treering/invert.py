@@ -27,11 +27,14 @@ class DDIMInverter:
         self.device = device
         self.dtype = dtype
 
-    def _encode_image(self, image: Image.Image) -> torch.Tensor:
-        tensor = TF.to_tensor(image.convert("RGB")).unsqueeze(0).to(device=self.device, dtype=self.dtype)
-        tensor = tensor * 2.0 - 1.0
+    def _encode_images(self, images: Sequence[Image.Image]) -> torch.Tensor:
+        if not images:
+            raise ValueError("images must be non-empty")
+        tensors = [TF.to_tensor(image.convert("RGB")).unsqueeze(0) for image in images]
+        batch = torch.cat(tensors, dim=0).to(device=self.device, dtype=self.dtype)
+        batch = batch * 2.0 - 1.0
         with torch.no_grad():
-            latent_dist = self.pipeline.vae.encode(tensor).latent_dist
+            latent_dist = self.pipeline.vae.encode(batch).latent_dist
             # Deterministic encoding is crucial for stable inversion-based detection.
             latents = latent_dist.mode() * self.pipeline.vae.config.scaling_factor
         return latents
@@ -54,7 +57,7 @@ class DDIMInverter:
         invert_prompt: str = "",
         num_inversion_steps: int = 50,
     ) -> torch.Tensor:
-        latents = torch.cat([self._encode_image(image) for image in images], dim=0)
+        latents = self._encode_images(images)
         text_embeds = self._encode_prompt(invert_prompt, batch_size=latents.shape[0])
 
         self.inverse_scheduler.set_timesteps(num_inversion_steps, device=self.device)

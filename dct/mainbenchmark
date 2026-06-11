@@ -1,0 +1,277 @@
+#!/usr/bin/env python3
+"""
+Standalone DCT benchmark using dct/reproduce_dct_paper.py (Cox et al. 1997).
+
+Metrics per attack:
+  - PSNR, SSIM (original grayscale vs watermarked+attacked)
+  - Bit accuracy (sign agreement on extracted vs embedded mark)
+  - AUROC, TPR @ 1% FPR (non-blind detector: original + candidate)
+
+Attacks: benchmark_attacks.py (14 WAVES attacks, unchanged).
+
+Example:
+  D:\\waves\\.venv\\Scripts\\python.exe mainbenchmark ^
+      --images "D:\\new method\\data\\coco100k\\val" ^
+      --n-images 100 ^
+      --output outputs_benchmark
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+from sklearn import metrics
+from tqdm.auto import tqdm
+
+REPO_ROOT = Path(__file__).resolve().parent
+WAVES_ROOT = REPO_ROOT.parent
+if str(WAVES_ROOT) not in sys.path:
+    sys.path.insert(0, str(WAVES_ROOT))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from benchmark_attacks import ATTACKS, apply_attack_gray  # noqa: E402
+from reproduce_dct_paper import (  # noqa: E402
+    embed_watermark,
+    extract_watermark,
+    gaussian_watermark,
+    image_quality_metrics,
+    similarity,
+)
+
+_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+
+
+def list_images(root: Path, limit: int) -> list[Path]:
+    paths = sorted(p for p in root.iterdir() if p.is_file() and p.suffix.lower() in _IMG_EXTS)
+    if len(paths) < limit:
+        raise FileNotFoundError(f"Need {limit} images under {root}, found {len(paths)}")
+    return paths[:limit]
+
+
+def load_gray(path: Path, size: int) -> np.ndarray:
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        w, h = im.size
+        side = min(w, h)
+        left, top = (w - side) // 2, (h - side) // 2
+        im = im.crop((left, top, left + side, top + side))
+        if im.size != (size, size):
+            im = im.resize((size, size), Image.Resampling.LANCZOS)
+        return np.asarray(im.convert("L"), dtype=np.float64)
+
+
+def bit_accuracy(
+    original: np.ndarray,
+    candidate: np.ndarray,
+    mark: np.ndarray,
+    rows: np.ndarray,
+    cols: np.ndarray,
+    alpha: float,
+) -> float:
+    extracted = extract_watermark(original, candidate, rows, cols, alpha)
+    return float(np.mean((mark > 0) == (extracted > 0)))
+
+
+def detect_score(
+    original: np.ndarray,
+    candidate: np.ndarray,
+    mark: np.ndarray,
+    rows: np.ndarray,
+    cols: np.ndarray,
+    alpha: float,
+) -> float:
+    extracted = extract_watermark(original, candidate, rows, cols, alpha)
+    return float(similarity(mark, extracted))
+
+
+def detection_auroc_and_tpr(
+    pos: np.ndarray, neg: np.ndarray, fpr_target: float = 0.01
+) -> tuple[float, float]:
+    y_true = np.concatenate(
+        [np.zeros(neg.size, dtype=np.int32), np.ones(pos.size, dtype=np.int32)]
+    )
+    y_score = np.concatenate([neg, pos])
+    auroc = float(metrics.roc_auc_score(y_true, y_score))
+    fpr, tpr, _ = metrics.roc_curve(y_true, y_score, pos_label=1)
+    below = np.where(fpr < fpr_target)[0]
+    tpr_at = float(tpr[below[-1]]) if below.size else float(tpr[0])
+    return auroc, tpr_at
+
+
+def run(
+    images_dir: Path,
+    output_dir: Path,
+    *,
+    n_images: int,
+    image_size: int,
+    watermark_length: int,
+    alpha: float,
+    seed: int,
+) -> list[dict]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    paths = list_images(images_dir, n_images)
+    rng = np.random.default_rng(seed)
+    mark = gaussian_watermark(watermark_length, rng)
+
+    records: list[dict] = []
+    print(
+        f"Embedding {len(paths)} images (n={watermark_length}, alpha={alpha}, seed={seed})…",
+        flush=True,
+    )
+    for path in tqdm(paths, desc="embed", unit="img"):
+        original = load_gray(path, image_size)
+        wm = embed_watermark(
+            original,
+            n=watermark_length,
+            alpha=alpha,
+            rng=np.random.default_rng(seed),
+            watermark=mark,
+        )
+        records.append(
+            {
+                "path": str(path),
+                "original": original,
+                "watermarked": wm.image,
+                "rows": wm.rows,
+                "cols": wm.cols,
+                "mark": wm.watermark,
+            }
+        )
+
+    sanity_ba = bit_accuracy(
+        records[0]["original"],
+        records[0]["watermarked"],
+        records[0]["mark"],
+        records[0]["rows"],
+        records[0]["cols"],
+        alpha,
+    )
+    sanity_score = detect_score(
+        records[0]["original"],
+        records[0]["watermarked"],
+        records[0]["mark"],
+        records[0]["rows"],
+        records[0]["cols"],
+        alpha,
+    )
+    print(
+        f"Sanity (image 0, no attack): similarity={sanity_score:.3f} BitAcc={sanity_ba:.3f}",
+        flush=True,
+    )
+
+    neg_scores = np.asarray(
+        [
+            detect_score(
+                r["original"], r["original"], r["mark"], r["rows"], r["cols"], alpha
+            )
+            for r in tqdm(records, desc="detect/negatives", unit="img")
+        ],
+        dtype=np.float64,
+    )
+
+    rows_out: list[dict] = []
+    for spec in ATTACKS:
+        psnr_vals: list[float] = []
+        ssim_vals: list[float] = []
+        bit_vals: list[float] = []
+        pos_scores: list[float] = []
+
+        for i, rec in enumerate(tqdm(records, desc=f"dct/{spec.name}", unit="img")):
+            original = rec["original"]
+            attacked = apply_attack_gray(spec.name, rec["watermarked"], seed=i)
+            q = image_quality_metrics(original, attacked)
+            psnr_vals.append(q["psnr_db"])
+            ssim_vals.append(q["ssim"])
+            bit_vals.append(
+                bit_accuracy(original, attacked, rec["mark"], rec["rows"], rec["cols"], alpha)
+            )
+            pos_scores.append(
+                detect_score(
+                    original, attacked, rec["mark"], rec["rows"], rec["cols"], alpha
+                )
+            )
+
+        pos_arr = np.asarray(pos_scores, dtype=np.float64)
+        auroc, tpr1 = detection_auroc_and_tpr(pos_arr, neg_scores)
+
+        row = {
+            "method": "dct",
+            "detector": "cox_non_blind",
+            "attack": spec.name,
+            "description": spec.description,
+            "n_images": len(records),
+            "PSNR": float(np.mean(psnr_vals)),
+            "SSIM": float(np.mean(ssim_vals)),
+            "bit_accuracy": float(np.mean(bit_vals)),
+            "AUROC": auroc,
+            "TPR_at_1pct_FPR": tpr1,
+        }
+        rows_out.append(row)
+        print(
+            f"  {spec.name}: PSNR={row['PSNR']:.2f} SSIM={row['SSIM']:.3f} "
+            f"BitAcc={row['bit_accuracy']:.3f} AUROC={row['AUROC']:.3f} "
+            f"TPR@1%FPR={row['TPR_at_1pct_FPR']:.3f}",
+            flush=True,
+        )
+
+    csv_path = output_dir / "results.csv"
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows_out[0].keys()))
+        w.writeheader()
+        w.writerows(rows_out)
+
+    summary = {
+        "method": "dct",
+        "implementation": "dct/reproduce_dct_paper.py",
+        "detector": "non-blind extract_watermark + similarity",
+        "images_dir": str(images_dir),
+        "n_images": len(records),
+        "image_size": image_size,
+        "watermark_length": watermark_length,
+        "alpha": alpha,
+        "seed": seed,
+        "sanity_identity": {"similarity": sanity_score, "bit_accuracy": sanity_ba},
+        "attacks": rows_out,
+    }
+    with open(output_dir / "results.json", "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+
+    print(f"\nWrote {csv_path}", flush=True)
+    return rows_out
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="DCT standalone benchmark (Cox paper code)")
+    p.add_argument(
+        "--images",
+        type=Path,
+        default=Path(r"D:\new method\data\coco100k\val"),
+    )
+    p.add_argument("--output", type=Path, default=REPO_ROOT / "outputs_benchmark")
+    p.add_argument("--n-images", type=int, default=100)
+    p.add_argument("--image-size", type=int, default=512)
+    p.add_argument("--watermark-length", type=int, default=1000)
+    p.add_argument("--alpha", type=float, default=0.1)
+    p.add_argument("--seed", type=int, default=42)
+    args = p.parse_args()
+
+    run(
+        args.images,
+        args.output,
+        n_images=args.n_images,
+        image_size=args.image_size,
+        watermark_length=args.watermark_length,
+        alpha=args.alpha,
+        seed=args.seed,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

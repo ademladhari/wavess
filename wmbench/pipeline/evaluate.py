@@ -20,7 +20,7 @@ from wmbench.metrics.distribution import (
     compute_fid_metric,
     compute_fid_from_dirs,
 )
-from wmbench.metrics.image_similarity import compute_nmi, compute_psnr, compute_ssim
+from wmbench.metrics.image_similarity import compute_nmi, compute_psnr_ssim_gpu
 from wmbench.metrics.aesthetics import compute_aesthetics_and_artifacts_scores
 from wmbench.metrics.quality import compute_aesthetics_delta_and_artifacts, compute_lpips
 from wmbench.pipeline.detect import tpr_at_fpr
@@ -65,7 +65,23 @@ def _ensure_fid_reference_mirror(work_dir: str, originals_dir: str) -> str | Non
     return mirror
 
 
-def _load_pairs(attacked_dir: str, originals_dir: str) -> tuple[list[Image.Image], list[Image.Image], list[str]]:
+def _build_originals_cache(originals_dir: str, basenames: list[str]) -> dict[str, Image.Image]:
+    cache: dict[str, Image.Image] = {}
+    for base in basenames:
+        op = os.path.join(originals_dir, base)
+        if not os.path.isfile(op):
+            continue
+        with Image.open(op) as oim:
+            cache[base] = oim.convert("RGB").copy()
+    return cache
+
+
+def _load_pairs(
+    attacked_dir: str,
+    originals_dir: str,
+    *,
+    originals_cache: dict[str, Image.Image] | None = None,
+) -> tuple[list[Image.Image], list[Image.Image], list[str]]:
     paths = sorted(
         p
         for p in glob.glob(os.path.join(attacked_dir, "*"))
@@ -73,17 +89,60 @@ def _load_pairs(attacked_dir: str, originals_dir: str) -> tuple[list[Image.Image
     )
     originals: list[Image.Image] = []
     attacked: list[Image.Image] = []
+    paired_basenames: list[str] = []
     for ap in paths:
         base = os.path.basename(ap)
-        op = os.path.join(originals_dir, base)
-        if not os.path.isfile(op):
-            continue
-        with Image.open(op) as oim:
-            originals.append(oim.convert("RGB"))
+        if originals_cache is not None:
+            original = originals_cache.get(base)
+            if original is None:
+                continue
+        else:
+            op = os.path.join(originals_dir, base)
+            if not os.path.isfile(op):
+                continue
+            with Image.open(op) as oim:
+                original = oim.convert("RGB")
         with Image.open(ap) as aim:
+            originals.append(original)
             attacked.append(aim.convert("RGB"))
-    basenames = [os.path.basename(p) for p in paths if os.path.isfile(os.path.join(originals_dir, os.path.basename(p)))]
-    return originals, attacked, basenames
+            paired_basenames.append(base)
+    return originals, attacked, paired_basenames
+
+
+def _metric_finite(row: dict, key: str) -> bool:
+    if key not in row:
+        return False
+    try:
+        v = float(row[key])
+    except (TypeError, ValueError):
+        return False
+    return not (np.isnan(v) or np.isinf(v))
+
+
+def _evaluate_row_complete(row: dict, *, skip_aesthetics_metrics: bool) -> bool:
+    for key in ("PSNR", "SSIM", "NMI", "LPIPS", "FID", "CLIP_FID"):
+        if not _metric_finite(row, key):
+            return False
+    if skip_aesthetics_metrics:
+        return True
+    return "aesthetics_delta" in row and "artifacts" in row
+
+
+def _load_metrics_json(path: str) -> dict | None:
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as mf:
+            data = json.load(mf)
+        return data if isinstance(data, dict) else None
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _flush_metrics_json(out_dir: str, row: dict) -> None:
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "metrics.json"), "w", encoding="utf-8") as jf:
+        json.dump(row, jf, indent=2)
 
 
 def run_evaluate_stage(
@@ -168,6 +227,12 @@ def run_evaluate_stage(
         except Exception:
             p_det = float("nan")
 
+        metrics_path = os.path.join(out_dir, "metrics.json")
+        partial_row = _load_metrics_json(metrics_path) if resume else None
+        if partial_row and _evaluate_row_complete(partial_row, skip_aesthetics_metrics=skip_aesthetics_metrics):
+            mark_done(done_flag)
+            continue
+
         key = (attack_name, stren_tag)
         jobs[key] = {
             "attack_name": attack_name,
@@ -176,7 +241,8 @@ def run_evaluate_stage(
             "out_dir": out_dir,
             "done_flag": done_flag,
             "p_det": float(p_det),
-            "row": None,  # filled in phases
+            "row": partial_row,
+            "has_pairs": bool(partial_row and _metric_finite(partial_row, "LPIPS")),
         }
 
     job_keys = sorted(jobs.keys(), key=lambda k: (k[0], str(k[1])))
@@ -237,6 +303,27 @@ def run_evaluate_stage(
 
     print("evaluate: preparing FID reference mirror…", flush=True)
     fid_ref_mirror = _ensure_fid_reference_mirror(work_dir, originals_dir)
+
+    wm_basenames = _watermarked_image_basenames(os.path.join(work_dir, "watermarked"))
+    print(f"evaluate: loading originals RAM cache ({len(wm_basenames)} images)…", flush=True)
+    t_cache = time.perf_counter()
+    originals_cache = _build_originals_cache(originals_dir, wm_basenames)
+    psnr_ssim_backend = "GPU (kornia)" if dev.type == "cuda" else "CPU"
+    print(
+        f"evaluate: originals cache ready ({len(originals_cache)} loaded) in "
+        f"{time.perf_counter() - t_cache:.1f}s; PSNR/SSIM via {psnr_ssim_backend}, "
+        f"batch_size={lpips_batch_size}",
+        flush=True,
+    )
+    n_skip_lpips = sum(1 for k in job_keys if _metric_finite(jobs[k].get("row") or {}, "LPIPS"))
+    n_skip_fid = sum(1 for k in job_keys if _metric_finite(jobs[k].get("row") or {}, "FID"))
+    n_skip_clip = sum(1 for k in job_keys if _metric_finite(jobs[k].get("row") or {}, "CLIP_FID"))
+    if n_skip_lpips or n_skip_fid or n_skip_clip:
+        print(
+            f"evaluate: resuming partial metrics — skip LPIPS:{n_skip_lpips} "
+            f"FID:{n_skip_fid} CLIP-FID:{n_skip_clip} of {n_pending} cell(s)",
+            flush=True,
+        )
     print("evaluate: starting metric phases (similarity+LPIPS → FID → CLIP-FID → aesthetics → write)…", flush=True)
 
     # Phase 1 — PSNR / SSIM / NMI / LPIPS (reload pairs per cell; keeps GPU model hot).
@@ -245,10 +332,16 @@ def run_evaluate_stage(
         attack_name = job["attack_name"]
         stren_tag = job["stren_tag"]
         attacked_dir = job["attacked_dir"]
-        originals, attacked, paired_basenames = _load_pairs(attacked_dir, originals_dir)
+        row = job.get("row")
+        if row is not None and _metric_finite(row, "LPIPS"):
+            continue
+
+        originals, attacked, paired_basenames = _load_pairs(
+            attacked_dir, originals_dir, originals_cache=originals_cache
+        )
         job["paired_basenames"] = paired_basenames
 
-        row: dict[str, float] = {"P": float(job["p_det"])}
+        row = dict(row) if row else {"P": float(job["p_det"])}
         if not originals:
             for mk in agg.METRIC_KEYS:
                 row[mk] = float("nan")
@@ -258,12 +351,15 @@ def run_evaluate_stage(
 
         job["has_pairs"] = True
         try:
-            row["PSNR"] = compute_psnr(attacked, originals)
+            row["PSNR"], row["SSIM"] = compute_psnr_ssim_gpu(
+                attacked,
+                originals,
+                device=dev,
+                batch_size=lpips_batch_size,
+                verbose=metric_progress,
+            )
         except Exception:
             row["PSNR"] = float("nan")
-        try:
-            row["SSIM"] = compute_ssim(attacked, originals)
-        except Exception:
             row["SSIM"] = float("nan")
         try:
             row["NMI"] = compute_nmi(attacked, originals)
@@ -288,6 +384,7 @@ def run_evaluate_stage(
                 f"Required metric LPIPS failed for attack={attack_name}, strength={stren_tag}"
             ) from e
         job["row"] = row
+        _flush_metrics_json(job["out_dir"], row)
 
     # Phase 2 — Inception FID (all cells).
     for key in tqdm(job_keys, desc="evaluate/FID(Inception)", unit="cell"):
@@ -299,6 +396,8 @@ def run_evaluate_stage(
         attacked_dir = job["attacked_dir"]
         row = job["row"]
         assert row is not None
+        if _metric_finite(row, "FID"):
+            continue
         try:
             if fid_ref_mirror:
                 fid_value = compute_fid_from_dirs(
@@ -308,13 +407,16 @@ def run_evaluate_stage(
                     verbose=metric_progress,
                 )
             else:
-                originals, attacked, _ = _load_pairs(attacked_dir, originals_dir)
+                originals, attacked, _ = _load_pairs(
+                    attacked_dir, originals_dir, originals_cache=originals_cache
+                )
                 fid_value = compute_fid_metric(attacked, originals, device=dev, verbose=metric_progress)
             row["FID"] = _require_finite("FID", fid_value, attack_name, stren_tag)
         except Exception as e:
             raise RuntimeError(
                 f"Required metric FID failed for attack={attack_name}, strength={stren_tag}"
             ) from e
+        _flush_metrics_json(job["out_dir"], row)
 
     # Phase 3 — CLIP-FID (all cells).
     for key in tqdm(job_keys, desc="evaluate/CLIP-FID", unit="cell"):
@@ -326,6 +428,8 @@ def run_evaluate_stage(
         attacked_dir = job["attacked_dir"]
         row = job["row"]
         assert row is not None
+        if _metric_finite(row, "CLIP_FID"):
+            continue
         try:
             if fid_ref_mirror:
                 clip_fid_value = compute_clip_fid_from_dirs(
@@ -335,7 +439,9 @@ def run_evaluate_stage(
                     verbose=metric_progress,
                 )
             else:
-                originals, attacked, _ = _load_pairs(attacked_dir, originals_dir)
+                originals, attacked, _ = _load_pairs(
+                    attacked_dir, originals_dir, originals_cache=originals_cache
+                )
                 clip_fid_value = compute_clip_fid(
                     attacked,
                     originals,
@@ -347,6 +453,7 @@ def run_evaluate_stage(
             raise RuntimeError(
                 f"Required metric CLIP_FID failed for attack={attack_name}, strength={stren_tag}"
             ) from e
+        _flush_metrics_json(job["out_dir"], row)
 
     # Phase 4 — aesthetics / artifacts (all cells).
     for key in tqdm(job_keys, desc="evaluate/aesthetics", unit="cell"):
@@ -358,7 +465,15 @@ def run_evaluate_stage(
         attack_name = job["attack_name"]
         stren_tag = job["stren_tag"]
         attacked_dir = job["attacked_dir"]
-        originals, attacked, paired_basenames = _load_pairs(attacked_dir, originals_dir)
+        if skip_aesthetics_metrics or ("aesthetics_delta" in row and "artifacts" in row):
+            if skip_aesthetics_metrics:
+                row.setdefault("aesthetics_delta", float("nan"))
+                row.setdefault("artifacts", float("nan"))
+            _flush_metrics_json(job["out_dir"], row)
+            continue
+        originals, attacked, paired_basenames = _load_pairs(
+            attacked_dir, originals_dir, originals_cache=originals_cache
+        )
 
         if aesthetics_models is not None:
             try:
@@ -391,6 +506,7 @@ def run_evaluate_stage(
                 with open(os.path.join(output_dir, "missing_components.txt"), "a", encoding="utf-8") as mf:
                     mf.write("aesthetics/artifacts models unavailable\n")
                 aesthetics_logged = True
+        _flush_metrics_json(job["out_dir"], row)
 
     # Phase 5 — write metrics.json + .done
     for key in job_keys:

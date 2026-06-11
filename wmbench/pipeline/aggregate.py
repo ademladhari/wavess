@@ -132,6 +132,184 @@ def _write_results_leaderboard(output_dir: str, rows: list[dict]) -> None:
             w.writerow(r)
 
 
+def _build_generative_raw_rows(
+    by_cell: dict[tuple[str, str, str], dict],
+    anchors: dict[str, tuple[float, float]],
+    methods: list[str],
+) -> list[dict]:
+    """Per (method, attack, strength) rows with P + generative quality metrics only."""
+    gen_methods = {m.strip().lower() for m in methods if agg.is_generation_based_method(m)}
+    rows: list[dict] = []
+    for (method, attack, stren_s), cell in sorted(by_cell.items()):
+        if method not in gen_methods:
+            continue
+        raw_metric_cells = {k: cell[k] for k in agg.GENERATIVE_QUALITY_METRIC_KEYS if k in cell}
+        row: dict = {
+            "method": method,
+            "attack": attack,
+            "strength": stren_s,
+            "P": float(cell.get("P", float("nan"))),
+            "Q_gen": agg.q_generative_from_raw_row(raw_metric_cells, anchors),
+        }
+        for k in agg.GENERATIVE_QUALITY_METRIC_KEYS:
+            row[k] = float(cell.get(k, float("nan")))
+        rows.append(row)
+    return rows
+
+
+def _write_results_raw_generative(output_dir: str, raw_rows: list[dict]) -> None:
+    os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, "results_raw_generative.csv")
+    if not raw_rows:
+        return
+    fieldnames = [
+        "method",
+        "attack",
+        "strength",
+        "P",
+        "Q_gen",
+        *agg.GENERATIVE_QUALITY_METRIC_KEYS,
+    ]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        w.writeheader()
+        for r in raw_rows:
+            w.writerow(r)
+
+
+def _average_generative_raw_rows(raw_rows: list[dict]) -> list[dict]:
+    buckets: dict[tuple[str, str], dict[str, list[float]]] = defaultdict(
+        lambda: {c: [] for c in ("P", "Q_gen", *agg.GENERATIVE_QUALITY_METRIC_KEYS)}
+    )
+    counts: dict[tuple[str, str], int] = defaultdict(int)
+    for row in raw_rows:
+        key = (str(row["method"]), str(row["attack"]))
+        counts[key] += 1
+        for col in ("P", "Q_gen", *agg.GENERATIVE_QUALITY_METRIC_KEYS):
+            if col not in row:
+                continue
+            try:
+                val = float(row[col])
+            except (TypeError, ValueError):
+                continue
+            buckets[key][col].append(val)
+    out: list[dict] = []
+    for (method, attack) in sorted(buckets.keys()):
+        row: dict = {"method": method, "attack": attack, "n_strengths": counts[(method, attack)]}
+        for col in ("P", "Q_gen", *agg.GENERATIVE_QUALITY_METRIC_KEYS):
+            row[f"avg_{col}"] = _finite_mean(buckets[(method, attack)][col])
+        out.append(row)
+    return out
+
+
+def _write_results_averaged_generative(output_dir: str, averaged_rows: list[dict]) -> None:
+    os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, "results_averaged_generative.csv")
+    if not averaged_rows:
+        return
+    quality_cols = [f"avg_{c}" for c in agg.GENERATIVE_QUALITY_METRIC_KEYS]
+    fieldnames = ["method", "attack", "n_strengths", "avg_P", "avg_Q_gen", *quality_cols]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        w.writeheader()
+        for r in averaged_rows:
+            w.writerow(r)
+
+
+def _build_generative_leaderboard(
+    by_cell: dict[tuple[str, str, str], dict],
+    anchors: dict[str, tuple[float, float]],
+    methods: list[str],
+) -> list[dict]:
+    gen_methods = {m.strip().lower() for m in methods if agg.is_generation_based_method(m)}
+    grouped: dict[tuple[str, str], list[tuple[float, float, float]]] = defaultdict(list)
+    for (method, attack, stren_s), cell in by_cell.items():
+        if method not in gen_methods:
+            continue
+        raw = {k: cell[k] for k in agg.GENERATIVE_QUALITY_METRIC_KEYS if k in cell}
+        q = agg.q_generative_from_raw_row(raw, anchors)
+        p = float(cell.get("P", float("nan")))
+        try:
+            s = float(stren_s)
+        except ValueError:
+            s = 0.0
+        grouped[(method, attack)].append((s, p, q))
+
+    rows: list[dict] = []
+    for (method, attack), triples in grouped.items():
+        triples.sort(key=lambda t: t[0])
+        sts = [t[0] for t in triples]
+        ps = [t[1] for t in triples]
+        qs = [t[2] for t in triples]
+        avg_p = _finite_mean(ps)
+        avg_q = _finite_mean(qs)
+        q70 = agg.interp_q_at_p(sts, ps, qs, 0.7)
+        q40 = agg.interp_q_at_p(sts, ps, qs, 0.4)
+        fid_vals: list[float] = []
+        clip_vals: list[float] = []
+        for (m, a, _stren), cell in by_cell.items():
+            if m != method or a != attack:
+                continue
+            if "FID" in cell:
+                fid_vals.append(float(cell["FID"]))
+            if "CLIP_FID" in cell:
+                clip_vals.append(float(cell["CLIP_FID"]))
+        rows.append(
+            {
+                "method": method,
+                "attack": attack,
+                "rank": 0,
+                "Q_gen@0.7P": q70,
+                "Q_gen@0.4P": q40,
+                "Avg_P": avg_p,
+                "Avg_Q_gen": avg_q,
+                "Avg_FID": _finite_mean(fid_vals),
+                "Avg_CLIP_FID": _finite_mean(clip_vals),
+            }
+        )
+
+    neg_inf = float("-inf")
+
+    def norm(x: float) -> float:
+        if x != x:
+            return neg_inf
+        return x
+
+    def sort_key(r: dict) -> tuple:
+        return (
+            norm(float(r["Q_gen@0.7P"])),
+            norm(float(r["Q_gen@0.4P"])),
+            norm(float(r["Avg_P"])),
+            norm(float(r["Avg_Q_gen"])),
+        )
+
+    rows.sort(key=sort_key, reverse=True)
+    for i, r in enumerate(rows, start=1):
+        r["rank"] = i
+    return rows
+
+
+def _write_results_leaderboard_generative(output_dir: str, rows: list[dict]) -> None:
+    os.makedirs(output_dir, exist_ok=True)
+    path = os.path.join(output_dir, "results_leaderboard_generative.csv")
+    fieldnames = [
+        "method",
+        "attack",
+        "rank",
+        "Q_gen@0.7P",
+        "Q_gen@0.4P",
+        "Avg_P",
+        "Avg_Q_gen",
+        "Avg_FID",
+        "Avg_CLIP_FID",
+    ]
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        w.writeheader()
+        for r in rows:
+            w.writerow(r)
+
+
 def _build_leaderboard(
     by_cell: dict[tuple[str, str, str], dict],
     anchors: dict[str, tuple[float, float]],
@@ -237,3 +415,10 @@ def run_aggregate_stage(work_parent: str, output_dir: str, methods: list[str]) -
     _write_results_averaged(output_dir, average_raw_rows(raw_rows))
     lb = _build_leaderboard(by_cell, anchors, methods)
     _write_results_leaderboard(output_dir, lb)
+
+    gen_raw = _build_generative_raw_rows(by_cell, anchors, methods)
+    if gen_raw:
+        _write_results_raw_generative(output_dir, gen_raw)
+        _write_results_averaged_generative(output_dir, _average_generative_raw_rows(gen_raw))
+        gen_lb = _build_generative_leaderboard(by_cell, anchors, methods)
+        _write_results_leaderboard_generative(output_dir, gen_lb)

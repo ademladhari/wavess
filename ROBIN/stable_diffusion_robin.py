@@ -21,6 +21,7 @@ from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import set_seed
 
+os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,  # seg logger level
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # set logger format
@@ -57,21 +58,27 @@ class ROBINStableDiffusionPipeline(StableDiffusionPipeline):
         scheduler,
         safety_checker=None,
         feature_extractor=None,
+        image_encoder=None,
         requires_safety_checker: bool = False,
     ):
         if isinstance(safety_checker, bool):
             requires_safety_checker = safety_checker
             safety_checker = None
+        if isinstance(feature_extractor, bool):
+            feature_extractor = None
         if safety_checker is None:
             requires_safety_checker = False
-        super(ROBINStableDiffusionPipeline, self).__init__(vae,
-                text_encoder,
-                tokenizer,
-                unet,
-                scheduler,
-                safety_checker,
-                feature_extractor,
-                requires_safety_checker)
+        super(ROBINStableDiffusionPipeline, self).__init__(
+            vae=vae,
+            text_encoder=text_encoder,
+            tokenizer=tokenizer,
+            unet=unet,
+            scheduler=scheduler,
+            safety_checker=safety_checker,
+            feature_extractor=feature_extractor,
+            image_encoder=image_encoder,
+            requires_safety_checker=requires_safety_checker,
+        )
 
     @torch.no_grad()
     def __call__(

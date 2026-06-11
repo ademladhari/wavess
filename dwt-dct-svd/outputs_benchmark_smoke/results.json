@@ -1,0 +1,173 @@
+{
+  "method": "dwt-dct-svd",
+  "implementation": "dwt-dct-svd/dwt_dct_svd.py",
+  "detector": "non-blind extract_tw + extract_signature + NCC",
+  "images_dir": "D:\\new method\\data\\coco100k\\val",
+  "n_images": 2,
+  "image_size": 512,
+  "bio_size": 256,
+  "sig_size": 128,
+  "alpha": 0.05,
+  "beta": 0.02,
+  "sig_seed": 777,
+  "sanity_identity": {
+    "ncc_score": 0.5656689474414316,
+    "bit_accuracy": 0.53704833984375
+  },
+  "attacks": [
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "identity",
+      "description": "no distortion",
+      "n_images": 2,
+      "PSNR": 41.17654897819773,
+      "bit_accuracy": 0.391265869140625,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "rotation",
+      "description": "rotate 22.5 deg (wmbench rel=0.5)",
+      "n_images": 2,
+      "PSNR": 10.731041123733782,
+      "bit_accuracy": 0.7796630859375,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "resized_crop",
+      "description": "random resized crop scale 0.75, square",
+      "n_images": 2,
+      "PSNR": 13.653099639586227,
+      "bit_accuracy": 0.576141357421875,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "erasing",
+      "description": "random erasing 12.5% area",
+      "n_images": 2,
+      "PSNR": 14.905189148869816,
+      "bit_accuracy": 0.819061279296875,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "brightness",
+      "description": "brightness factor 1.5",
+      "n_images": 2,
+      "PSNR": 13.795838643951459,
+      "bit_accuracy": 0.593963623046875,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "contrast",
+      "description": "contrast factor 1.5",
+      "n_images": 2,
+      "PSNR": 20.318577733739865,
+      "bit_accuracy": 0.838348388671875,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "blur",
+      "description": "Gaussian blur radius 4 px",
+      "n_images": 2,
+      "PSNR": 22.86234787037469,
+      "bit_accuracy": 0.639862060546875,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "resize_90",
+      "description": "resize to 90% then back",
+      "n_images": 2,
+      "PSNR": 35.86534826855049,
+      "bit_accuracy": 0.41357421875,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "jpeg_q50",
+      "description": "JPEG quality 50",
+      "n_images": 2,
+      "PSNR": 29.246288579001856,
+      "bit_accuracy": 0.2325439453125,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "crop",
+      "description": "center crop 85% then resize back",
+      "n_images": 2,
+      "PSNR": 13.40212427166232,
+      "bit_accuracy": 0.723785400390625,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "gaussian",
+      "description": "additive Gaussian noise sigma=25 (0-255 scale)",
+      "n_images": 2,
+      "PSNR": 20.58179373843845,
+      "bit_accuracy": 0.559783935546875,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "combo_geometric",
+      "description": "rotation 22.5 -> resized_crop 0.75",
+      "n_images": 2,
+      "PSNR": 10.958004584413281,
+      "bit_accuracy": 0.860565185546875,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "combo_photometric",
+      "description": "brightness 1.5 -> contrast 1.5",
+      "n_images": 2,
+      "PSNR": 13.257875975823534,
+      "bit_accuracy": 0.710784912109375,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    },
+    {
+      "method": "dwt-dct-svd",
+      "detector": "non_blind_ncc_signature",
+      "attack": "combined",
+      "description": "crop 85% -> JPEG Q50 -> Gaussian sigma=15",
+      "n_images": 2,
+      "PSNR": 13.133892188841312,
+      "bit_accuracy": 0.694732666015625,
+      "AUROC": 1.0,
+      "TPR_at_1pct_FPR": 1.0
+    }
+  ]
+}

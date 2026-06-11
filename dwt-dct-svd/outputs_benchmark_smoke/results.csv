@@ -1,0 +1,15 @@
+method,detector,attack,description,n_images,PSNR,bit_accuracy,AUROC,TPR_at_1pct_FPR
+dwt-dct-svd,non_blind_ncc_signature,identity,no distortion,2,41.17654897819773,0.391265869140625,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,rotation,rotate 22.5 deg (wmbench rel=0.5),2,10.731041123733782,0.7796630859375,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,resized_crop,"random resized crop scale 0.75, square",2,13.653099639586227,0.576141357421875,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,erasing,random erasing 12.5% area,2,14.905189148869816,0.819061279296875,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,brightness,brightness factor 1.5,2,13.795838643951459,0.593963623046875,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,contrast,contrast factor 1.5,2,20.318577733739865,0.838348388671875,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,blur,Gaussian blur radius 4 px,2,22.86234787037469,0.639862060546875,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,resize_90,resize to 90% then back,2,35.86534826855049,0.41357421875,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,jpeg_q50,JPEG quality 50,2,29.246288579001856,0.2325439453125,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,crop,center crop 85% then resize back,2,13.40212427166232,0.723785400390625,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,gaussian,additive Gaussian noise sigma=25 (0-255 scale),2,20.58179373843845,0.559783935546875,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,combo_geometric,rotation 22.5 -> resized_crop 0.75,2,10.958004584413281,0.860565185546875,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,combo_photometric,brightness 1.5 -> contrast 1.5,2,13.257875975823534,0.710784912109375,1.0,1.0
+dwt-dct-svd,non_blind_ncc_signature,combined,crop 85% -> JPEG Q50 -> Gaussian sigma=15,2,13.133892188841312,0.694732666015625,1.0,1.0

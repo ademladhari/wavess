@@ -199,6 +199,15 @@ def main(argv: list[str] | None = None) -> int:
         help="LPIPS pair minibatch size during evaluate phase.",
     )
     p.add_argument(
+        "--detect-batch-size",
+        type=int,
+        default=1,
+        help=(
+            "Tree-Ring detect minibatch (batched DDIM inversion per chunk). "
+            "Try 8–16 on A100/L4; lower on 8GB GPUs. Overrides WMBENCH_TREE_RING_DETECT_BATCH when set >1."
+        ),
+    )
+    p.add_argument(
         "--profile-stages",
         action="store_true",
         help="Print per-stage wall-clock and peak CUDA allocation for tuning.",
@@ -337,6 +346,7 @@ def main(argv: list[str] | None = None) -> int:
             strength_map,
             resume=args.resume,
             blind_detect=args.blind_detect,
+            detect_batch_size=args.detect_batch_size,
         )
         if args.profile_stages:
             _print_stage_profile(f"{m}/detect", time.perf_counter() - t0, device)

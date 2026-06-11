@@ -10,6 +10,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 
 import numpy as np
 from PIL import Image
+from sklearn import metrics
 from tqdm.auto import tqdm
 
 from wmbench.pipeline.embed import meta_sidecar_path
@@ -129,6 +130,7 @@ def _tree_ring_detect_worker(
     blind_detect: bool,
     originals_dir: str,
     visible_gpu: str,
+    detect_batch_size: int,
 ) -> list[tuple[int, float]]:
     global _TREE_RING_WORKER_ADAPTER, _TREE_RING_WORKER_DEVICE
 
@@ -144,18 +146,80 @@ def _tree_ring_detect_worker(
         _TREE_RING_WORKER_DEVICE = device
 
     adapter = _TREE_RING_WORKER_ADAPTER
+    batch_size = max(1, int(detect_batch_size))
     scores: list[tuple[int, float]] = []
-    for idx, p in items:
-        with Image.open(p) as im:
-            img = im.convert("RGB")
+    for start in range(0, len(items), batch_size):
+        chunk = items[start : start + batch_size]
+        images: list[Image.Image] = []
+        for _, p in chunk:
+            with Image.open(p) as im:
+                images.append(im.convert("RGB"))
         if blind_detect:
-            sc = float(adapter.detect(img, None, meta=None, blind=True))
+            batch_scores = adapter.detect_batch(images, blind=True)
         else:
-            orig_path = os.path.join(originals_dir, os.path.basename(p))
-            with Image.open(orig_path) as oi:
-                oimg = oi.convert("RGB")
-            sc = float(adapter.detect(img, oimg, meta=None, blind=False))
-        scores.append((idx, sc))
+            originals: list[Image.Image | None] = []
+            for _, p in chunk:
+                orig_path = os.path.join(originals_dir, os.path.basename(p))
+                with Image.open(orig_path) as oi:
+                    originals.append(oi.convert("RGB"))
+            batch_scores = adapter.detect_batch(images, originals, blind=False)
+        for (idx, _), sc in zip(chunk, batch_scores):
+            scores.append((idx, float(sc)))
+    return scores
+
+
+def _tree_ring_score_paths_batched(
+    adapter: WatermarkAdapter,
+    paths: list[str],
+    *,
+    blind_detect: bool,
+    originals_dir: str,
+    detect_batch_size: int,
+    desc: str,
+    embed_meta_by_base: dict[str, dict | None] | None = None,
+    svd_neg_payload_bank: list[dict] | None = None,
+    dwt_dct_svd_neg_payload_bank: list[dict] | None = None,
+) -> list[float]:
+    """Batched tree-ring detect (DDIM invert minibatches on one GPU)."""
+    batch_size = max(1, int(detect_batch_size))
+    scores: list[float] = []
+    n = len(paths)
+    with tqdm(total=n, desc=desc, unit="img") as pbar:
+        for start in range(0, n, batch_size):
+            batch_paths = paths[start : start + batch_size]
+            images: list[Image.Image] = []
+            originals: list[Image.Image | None] = []
+            metas: list[dict | None] = []
+            for i, p in enumerate(batch_paths):
+                with Image.open(p) as im:
+                    images.append(im.convert("RGB"))
+                if blind_detect:
+                    if adapter.name == "svd" and svd_neg_payload_bank:
+                        metas.append(svd_neg_payload_bank[(start + i) % len(svd_neg_payload_bank)])
+                    elif embed_meta_by_base is not None:
+                        metas.append(embed_meta_by_base.get(os.path.basename(p)))
+                    else:
+                        metas.append(None)
+                    originals.append(None)
+                else:
+                    orig_path = os.path.join(originals_dir, os.path.basename(p))
+                    with Image.open(orig_path) as oi:
+                        originals.append(oi.convert("RGB"))
+                    if adapter.name == "dwt-dct-svd" and dwt_dct_svd_neg_payload_bank:
+                        metas.append(
+                            dwt_dct_svd_neg_payload_bank[(start + i) % len(dwt_dct_svd_neg_payload_bank)]
+                        )
+                    else:
+                        metas.append(None)
+            if adapter.name == "tree-ring":
+                if blind_detect:
+                    batch_scores = adapter.detect_batch(images, blind=True)
+                else:
+                    batch_scores = adapter.detect_batch(images, originals, blind=False)
+            else:
+                batch_scores = adapter.detect_batch(images, originals, metas=metas, blind=blind_detect)
+            scores.extend(float(s) for s in batch_scores)
+            pbar.update(len(batch_paths))
     return scores
 
 
@@ -166,6 +230,7 @@ def _tree_ring_score_paths_multi_gpu(
     originals_dir: str,
     gpu_ids: list[str],
     desc: str,
+    detect_batch_size: int,
 ) -> list[float]:
     """
     Score paths with Tree-Ring detector across multiple GPUs.
@@ -194,6 +259,7 @@ def _tree_ring_score_paths_multi_gpu(
                 blind_detect=blind_detect,
                 originals_dir=originals_dir,
                 visible_gpu=gid,
+                detect_batch_size=detect_batch_size,
             )
             for gid, chunk in chunks
         ]
@@ -207,14 +273,48 @@ def _tree_ring_score_paths_multi_gpu(
     return scores
 
 
-def tpr_at_fpr(positive: np.ndarray, negative: np.ndarray, fpr_target: float = 0.001) -> float:
-    """TPR at threshold = (1 - fpr_target) quantile of negative scores (99.9th pct for 0.1% FPR)."""
+def tpr_at_fpr_quantile(positive: np.ndarray, negative: np.ndarray, fpr_target: float = 0.001) -> float:
+    """Legacy: threshold = quantile(negatives, 1 - fpr_target); P = mean(positives > thr)."""
     if negative.size == 0:
         raise ValueError("negative scores required for TPR@FPR")
     thr = float(np.quantile(negative, 1.0 - fpr_target))
     if positive.size == 0:
         return 0.0
     return float(np.mean(positive > thr))
+
+
+def tpr_at_fpr(positive: np.ndarray, negative: np.ndarray, fpr_target: float = 0.001) -> float:
+    """TPR@FPR via ROC (WAVES ``dev.eval.detection_performance`` / ``low1000_1``).
+
+    Higher score = stronger watermark evidence. Pools negatives (label 0) and positives
+    (label 1), then reads TPR at ``fpr_target`` (default 0.1% FPR).
+    Set ``WMBENCH_TPR_AT_FPR=quantile`` to use the old quantile-threshold path.
+    """
+    mode = os.environ.get("WMBENCH_TPR_AT_FPR", "roc").strip().lower()
+    if mode == "quantile":
+        return tpr_at_fpr_quantile(positive, negative, fpr_target=fpr_target)
+
+    if negative.size == 0:
+        raise ValueError("negative scores required for TPR@FPR")
+    if positive.size == 0:
+        return 0.0
+
+    pos = np.asarray(positive, dtype=np.float64)
+    neg = np.asarray(negative, dtype=np.float64)
+    y_true = np.concatenate([np.zeros(neg.size, dtype=np.int32), np.ones(pos.size, dtype=np.int32)])
+    y_score = np.concatenate([neg, pos])
+    fpr, tpr, _ = metrics.roc_curve(y_true, y_score, pos_label=1)
+
+    # WAVES dev/eval.py: last TPR where FPR is still below target.
+    below = np.where(fpr < fpr_target)[0]
+    if below.size == 0:
+        return float(tpr[0])
+    roc_p = float(tpr[below[-1]])
+
+    # Optional smooth readout (tree-ring evaluate.py style); off by default for WAVES parity.
+    if os.environ.get("WMBENCH_TPR_ROC_INTERP", "").strip().lower() in {"1", "true", "yes"}:
+        return float(np.interp(fpr_target, fpr, tpr))
+    return roc_p
 
 
 def run_detect_stage(
@@ -227,6 +327,7 @@ def run_detect_stage(
     *,
     resume: bool = False,
     blind_detect: bool = False,
+    detect_batch_size: int = 1,
 ) -> None:
     watermarked_dir = os.path.join(work_dir, "watermarked")
     attacked_root = os.path.join(work_dir, "attacked")
@@ -272,6 +373,13 @@ def run_detect_stage(
     neg_scores: list[float] = []
     cache_loaded = False
     tree_ring_gpus = _tree_ring_detect_gpu_ids() if adapter.name == "tree-ring" else []
+    if adapter.name == "tree-ring":
+        detect_batch_size = max(1, int(detect_batch_size))
+        env_batch = os.environ.get("WMBENCH_TREE_RING_DETECT_BATCH", "").strip()
+        if env_batch and detect_batch_size <= 1:
+            detect_batch_size = max(1, int(env_batch))
+        if detect_batch_size > 1:
+            print(f"tree-ring detect batch size: {detect_batch_size}", flush=True)
     if os.path.isfile(cache_path):
         try:
             with open(cache_path, encoding="utf-8") as cf:
@@ -295,6 +403,7 @@ def run_detect_stage(
                     originals_dir=originals_dir,
                     gpu_ids=tree_ring_gpus,
                     desc=f"neg/{adapter.name}",
+                    detect_batch_size=detect_batch_size,
                 )
                 used_tree_ring_mgpu = True
             except Exception as e:
@@ -304,28 +413,38 @@ def run_detect_stage(
                 )
                 neg_scores = []
         if not used_tree_ring_mgpu:
-            for i, p in enumerate(tqdm(neg_paths, desc=f"neg/{adapter.name}")):
-                with Image.open(p) as im:
-                    neg = im.convert("RGB")
-                if blind_detect:
-                    if adapter.name == "svd":
-                        key_meta = svd_neg_payload_bank[i % len(svd_neg_payload_bank)]
-                        neg_scores.append(float(adapter.detect(neg, None, meta=key_meta, blind=True)))
+            if adapter.name == "tree-ring" and detect_batch_size > 1:
+                neg_scores = _tree_ring_score_paths_batched(
+                    adapter,
+                    neg_paths,
+                    blind_detect=blind_detect,
+                    originals_dir=originals_dir,
+                    detect_batch_size=detect_batch_size,
+                    desc=f"neg/{adapter.name}",
+                )
+            else:
+                for i, p in enumerate(tqdm(neg_paths, desc=f"neg/{adapter.name}")):
+                    with Image.open(p) as im:
+                        neg = im.convert("RGB")
+                    if blind_detect:
+                        if adapter.name == "svd":
+                            key_meta = svd_neg_payload_bank[i % len(svd_neg_payload_bank)]
+                            neg_scores.append(float(adapter.detect(neg, None, meta=key_meta, blind=True)))
+                        else:
+                            neg_scores.append(float(adapter.detect(neg, None, meta=None, blind=True)))
                     else:
-                        neg_scores.append(float(adapter.detect(neg, None, meta=None, blind=True)))
-                else:
-                    orig_path = os.path.join(originals_dir, os.path.basename(p))
-                    if not os.path.isfile(orig_path):
-                        raise FileNotFoundError(
-                            "Negative image does not have a matching original by basename for calibration: "
-                            f"{os.path.basename(p)!r} (expected original at {orig_path})"
-                        )
-                    with Image.open(orig_path) as oi:
-                        orig = oi.convert("RGB")
-                    neg_meta = None
-                    if adapter.name == "dwt-dct-svd":
-                        neg_meta = dwt_dct_svd_neg_payload_bank[i % len(dwt_dct_svd_neg_payload_bank)]
-                    neg_scores.append(float(adapter.detect(neg, orig, meta=neg_meta, blind=False)))
+                        orig_path = os.path.join(originals_dir, os.path.basename(p))
+                        if not os.path.isfile(orig_path):
+                            raise FileNotFoundError(
+                                "Negative image does not have a matching original by basename for calibration: "
+                                f"{os.path.basename(p)!r} (expected original at {orig_path})"
+                            )
+                        with Image.open(orig_path) as oi:
+                            orig = oi.convert("RGB")
+                        neg_meta = None
+                        if adapter.name == "dwt-dct-svd":
+                            neg_meta = dwt_dct_svd_neg_payload_bank[i % len(dwt_dct_svd_neg_payload_bank)]
+                        neg_scores.append(float(adapter.detect(neg, orig, meta=neg_meta, blind=False)))
         try:
             os.makedirs(scores_root, exist_ok=True)
             with open(cache_path, "w", encoding="utf-8") as cf:
@@ -399,14 +518,36 @@ def run_detect_stage(
                         originals_dir=originals_dir,
                         gpu_ids=tree_ring_gpus,
                         desc=f"scores/{attack_name}/{stren_tag}",
+                        detect_batch_size=detect_batch_size,
                     )
                 except Exception as e:
                     print(
                         f"tree-ring multi-GPU scores failed ({e!r}); falling back to single-process detect.",
                         flush=True,
                     )
-                    for ap in tqdm(atk_paths, desc=f"scores/{attack_name}/{stren_tag}"):
-                        pos_scores.append(_score_path(ap))
+                    if detect_batch_size > 1:
+                        pos_scores = _tree_ring_score_paths_batched(
+                            adapter,
+                            atk_paths,
+                            blind_detect=blind_detect,
+                            originals_dir=originals_dir,
+                            detect_batch_size=detect_batch_size,
+                            desc=f"scores/{attack_name}/{stren_tag}",
+                            embed_meta_by_base=embed_meta_by_base,
+                        )
+                    else:
+                        for ap in tqdm(atk_paths, desc=f"scores/{attack_name}/{stren_tag}"):
+                            pos_scores.append(_score_path(ap))
+            elif adapter.name == "tree-ring" and detect_batch_size > 1:
+                pos_scores = _tree_ring_score_paths_batched(
+                    adapter,
+                    atk_paths,
+                    blind_detect=blind_detect,
+                    originals_dir=originals_dir,
+                    detect_batch_size=detect_batch_size,
+                    desc=f"scores/{attack_name}/{stren_tag}",
+                    embed_meta_by_base=embed_meta_by_base,
+                )
             else:
                 for ap in tqdm(atk_paths, desc=f"scores/{attack_name}/{stren_tag}"):
                     pos_scores.append(_score_path(ap))

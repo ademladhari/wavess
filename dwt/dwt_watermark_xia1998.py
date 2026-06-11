@@ -77,12 +77,37 @@ def embed_watermark_dwt(
     return x_hat, payload
 
 
-def normalized_2d_xcorr(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+def _resolve_torch_device(device) -> "torch.device | None":
+    if device is None:
+        return None
+    try:
+        import torch
+    except ImportError:
+        return None
+    dev = torch.device(device) if not isinstance(device, torch.device) else device
+    if dev.type == "cuda" and not torch.cuda.is_available():
+        return None
+    return dev
+
+
+def normalized_2d_xcorr(a: np.ndarray, b: np.ndarray, *, device=None) -> np.ndarray:
     a = np.asarray(a, dtype=float)
     b = np.asarray(b, dtype=float)
     a0 = a - np.mean(a)
     b0 = b - np.mean(b)
-    denom = np.linalg.norm(a0) * np.linalg.norm(b0) + 1e-12
+    denom = float(np.linalg.norm(a0) * np.linalg.norm(b0) + 1e-12)
+
+    dev = _resolve_torch_device(device)
+    if dev is not None:
+        import torch
+        import torch.nn.functional as F
+
+        a_t = torch.as_tensor(a0, dtype=torch.float32, device=dev).unsqueeze(0).unsqueeze(0)
+        k_t = torch.as_tensor(b0, dtype=torch.float32, device=dev).unsqueeze(0).unsqueeze(0)
+        kh, kw = int(k_t.shape[-2]), int(k_t.shape[-1])
+        corr_t = F.conv2d(a_t, k_t.flip(dims=(-2, -1)), padding=(kh - 1, kw - 1))
+        return (corr_t.squeeze() / denom).detach().cpu().numpy()
+
     corr = signal.correlate2d(a0, b0, mode="full", boundary="fill", fillvalue=0.0)
     return corr / denom
 
@@ -104,6 +129,8 @@ def detect_watermark_hierarchical(
     received_image: np.ndarray,
     payload: dict,
     ratio_threshold: float = 1.05,
+    *,
+    device=None,
 ):
     levels = payload["levels"]
     wavelet = payload["wavelet"]
@@ -127,7 +154,7 @@ def detect_watermark_hierarchical(
             corr_peaks = []
             for sb in selected:
                 diff = band_map_r[sb] - band_map_o[sb]
-                corr_map = normalized_2d_xcorr(diff, Wsig[(lev_idx, sb)])
+                corr_map = normalized_2d_xcorr(diff, Wsig[(lev_idx, sb)], device=device)
                 pr, pk = peak_ratio(corr_map)
                 corr_peaks.append((pr, pk))
 

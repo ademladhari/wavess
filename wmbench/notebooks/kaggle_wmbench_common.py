@@ -69,6 +69,7 @@ def run_benchmark(
     diff_batch: int = 4,
     embed_batch: int = 8,  # one SD forward per chunk for GPU methods; CPU parallel workers
     lpips_batch: int = 16,
+    detect_batch: int = 8,
     skip_rinse4x: bool = True,
     resume: bool = True,
     skip_aesthetics: bool = True,
@@ -91,6 +92,8 @@ def run_benchmark(
         str(embed_batch),
         "--lpips-batch-size",
         str(lpips_batch),
+        "--detect-batch-size",
+        str(detect_batch),
         "--blind-detect",
     ]
     if images:

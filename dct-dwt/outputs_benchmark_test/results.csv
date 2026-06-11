@@ -1,0 +1,6 @@
+method,detector,attack,description,n_images,PSNR,SSIM,bit_accuracy,AUROC,TPR_at_1pct_FPR
+dct-dwt,blind_pn_rho,identity,no distortion,5,95.00390923900943,0.9999999958084574,0.9794921875,0.5,0.0
+dct-dwt,blind_pn_rho,jpeg_q50,JPEG quality 50,5,31.892748564412308,0.9898555735323764,0.9794921875,0.5,0.0
+dct-dwt,blind_pn_rho,crop,center crop 85% then resize back,5,14.303244684778296,0.5628927797292956,0.9794921875,0.5,0.0
+dct-dwt,blind_pn_rho,gaussian,additive Gaussian noise sigma=25,5,20.47996259392946,0.8927978718432735,0.9794921875,0.5,0.0
+dct-dwt,blind_pn_rho,combined,crop 85% -> JPEG Q50 -> Gaussian sigma=15,5,13.945199882381047,0.5405745787327363,0.9794921875,0.5,0.0

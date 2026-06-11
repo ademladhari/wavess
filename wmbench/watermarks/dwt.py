@@ -6,6 +6,7 @@ import importlib.util
 import os
 
 import numpy as np
+import torch
 from PIL import Image
 
 from wmbench.watermarks.base import WatermarkAdapter
@@ -33,6 +34,7 @@ class DWTAdapter(WatermarkAdapter):
         seed: int = 1234,
         largest_fraction: float = 0.10,
         ratio_threshold: float = 1.05,
+        device: str | torch.device | None = None,
     ):
         self.alpha = alpha
         self.levels = levels
@@ -42,6 +44,13 @@ class DWTAdapter(WatermarkAdapter):
         self.ratio_threshold = ratio_threshold
         self._last_payload: dict | None = None
         self._dwt_impl = _load_dwt_module()
+        env_dev = os.environ.get("WMBENCH_DWT_DEVICE", "").strip()
+        if device is not None:
+            self._device = torch.device(device) if isinstance(device, str) else device
+        elif env_dev:
+            self._device = torch.device(env_dev)
+        else:
+            self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     @property
     def name(self) -> str:
@@ -102,7 +111,11 @@ class DWTAdapter(WatermarkAdapter):
         if o.max() <= 1.0 + 1e-6:
             o = o * 255.0
         _ok, _rec, all_records = self._dwt_impl.detect_watermark_hierarchical(
-            o, c, payload, ratio_threshold=self.ratio_threshold
+            o,
+            c,
+            payload,
+            ratio_threshold=self.ratio_threshold,
+            device=self._device,
         )
         ratios = [r["mean_peak_ratio"] for r in all_records]
         max_ratio = max(ratios) if ratios else 0.0

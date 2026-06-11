@@ -1,0 +1,15 @@
+method,detector,attack,description,n_images,PSNR,SSIM,bit_accuracy,AUROC,TPR_at_1pct_FPR
+robin,ddim_invert_fft_l1,identity,no distortion,2,inf,1.0,nan,1.0,1.0
+robin,ddim_invert_fft_l1,rotation,rotate 22.5 deg (wmbench rel=0.5),2,11.432725906943237,0.18838171341501042,nan,1.0,1.0
+robin,ddim_invert_fft_l1,resized_crop,"random resized crop scale 0.75, square",2,14.276210779935585,0.2678010576728192,nan,1.0,1.0
+robin,ddim_invert_fft_l1,erasing,random erasing 12.5% area,2,14.754197341125186,0.8652198807562628,nan,1.0,1.0
+robin,ddim_invert_fft_l1,brightness,brightness factor 1.5,2,13.572595431159549,0.8582114947810175,nan,1.0,1.0
+robin,ddim_invert_fft_l1,contrast,contrast factor 1.5,2,22.000198639549446,0.8676790840522857,nan,1.0,1.0
+robin,ddim_invert_fft_l1,blur,Gaussian blur radius 4 px,2,21.94666858363517,0.5250822645292612,nan,1.0,1.0
+robin,ddim_invert_fft_l1,resize_90,resize to 90% then back,2,36.12876842927687,0.97118652078982,nan,1.0,1.0
+robin,ddim_invert_fft_l1,jpeg_q50,JPEG quality 50,2,30.982984786171436,0.8776311496463212,nan,1.0,1.0
+robin,ddim_invert_fft_l1,crop,center crop 85% then resize back,2,14.346537172209652,0.25130770348161857,nan,1.0,1.0
+robin,ddim_invert_fft_l1,gaussian,additive Gaussian noise sigma=25 (0-255 scale),2,20.30356194914772,0.3847418699815043,nan,1.0,1.0
+robin,ddim_invert_fft_l1,combo_geometric,rotation 22.5 -> resized_crop 0.75,2,12.24889721740442,0.22571658843811185,nan,1.0,1.0
+robin,ddim_invert_fft_l1,combo_photometric,brightness 1.5 -> contrast 1.5,2,12.997811034705991,0.7078899096709679,nan,1.0,1.0
+robin,ddim_invert_fft_l1,combined,crop 85% -> JPEG Q50 -> Gaussian sigma=15,2,13.954866014668896,0.10578239517566591,nan,0.25,0.0

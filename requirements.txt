@@ -1,0 +1,30 @@
+# D:\waves local dev
+#
+# 1) PyTorch (CUDA 12.8):
+#      .venv\Scripts\pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+# 2) This file:
+#      .venv\Scripts\pip install -r requirements.txt
+#
+# compressai (Regen-VAE only) has NO Windows wheels — see requirements-optional.txt
+
+numpy>=1.26.0,<2.0
+scipy
+pillow
+matplotlib
+tqdm
+click
+scikit-image
+scikit-learn
+pandas
+
+diffusers
+transformers
+accelerate
+huggingface-hub
+
+lpips
+open-clip-torch
+PyWavelets
+packaging
+requests
+PyYAML

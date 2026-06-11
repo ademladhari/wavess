@@ -1,0 +1,77 @@
+{
+  "method": "dct-dwt",
+  "implementation": "dct-dwt/dwt_dct_watermarking.ipynb",
+  "detector": "blind extract_watermark_bits + rho",
+  "images_dir": "D:\\new method\\data\\coco100k\\val",
+  "n_images": 5,
+  "image_size": 512,
+  "embed_wm_size": 32,
+  "alpha": 0.07256475219726562,
+  "seed": 101,
+  "wm_seed": 777,
+  "wavelet": "haar",
+  "subband_choice": "HH2",
+  "pn_mode": "independent_rademacher",
+  "attacks": [
+    {
+      "method": "dct-dwt",
+      "detector": "blind_pn_rho",
+      "attack": "identity",
+      "description": "no distortion",
+      "n_images": 5,
+      "PSNR": 95.00390923900943,
+      "SSIM": 0.9999999958084574,
+      "bit_accuracy": 0.9794921875,
+      "AUROC": 0.5,
+      "TPR_at_1pct_FPR": 0.0
+    },
+    {
+      "method": "dct-dwt",
+      "detector": "blind_pn_rho",
+      "attack": "jpeg_q50",
+      "description": "JPEG quality 50",
+      "n_images": 5,
+      "PSNR": 31.892748564412308,
+      "SSIM": 0.9898555735323764,
+      "bit_accuracy": 0.9794921875,
+      "AUROC": 0.5,
+      "TPR_at_1pct_FPR": 0.0
+    },
+    {
+      "method": "dct-dwt",
+      "detector": "blind_pn_rho",
+      "attack": "crop",
+      "description": "center crop 85% then resize back",
+      "n_images": 5,
+      "PSNR": 14.303244684778296,
+      "SSIM": 0.5628927797292956,
+      "bit_accuracy": 0.9794921875,
+      "AUROC": 0.5,
+      "TPR_at_1pct_FPR": 0.0
+    },
+    {
+      "method": "dct-dwt",
+      "detector": "blind_pn_rho",
+      "attack": "gaussian",
+      "description": "additive Gaussian noise sigma=25",
+      "n_images": 5,
+      "PSNR": 20.47996259392946,
+      "SSIM": 0.8927978718432735,
+      "bit_accuracy": 0.9794921875,
+      "AUROC": 0.5,
+      "TPR_at_1pct_FPR": 0.0
+    },
+    {
+      "method": "dct-dwt",
+      "detector": "blind_pn_rho",
+      "attack": "combined",
+      "description": "crop 85% -> JPEG Q50 -> Gaussian sigma=15",
+      "n_images": 5,
+      "PSNR": 13.945199882381047,
+      "SSIM": 0.5405745787327363,
+      "bit_accuracy": 0.9794921875,
+      "AUROC": 0.5,
+      "TPR_at_1pct_FPR": 0.0
+    }
+  ]
+}

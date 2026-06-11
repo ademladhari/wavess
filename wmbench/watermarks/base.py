@@ -38,3 +38,21 @@ class WatermarkAdapter(ABC):
         Non-blind (``blind=False``): uses ``original`` host image (oracle reference).
         Blind (``blind=True``): uses only ``meta`` from embed sidecar (no original pixels).
         """
+
+    def detect_batch(
+        self,
+        images: list[Image.Image],
+        originals: list[Image.Image | None] | None = None,
+        *,
+        metas: list[dict | None] | None = None,
+        blind: bool = False,
+    ) -> list[float]:
+        """Score a minibatch. Override when the backend supports batched inference."""
+        if originals is None:
+            originals = [None] * len(images)
+        if metas is None:
+            metas = [None] * len(images)
+        return [
+            self.detect(im, orig, meta=meta, blind=blind)
+            for im, orig, meta in zip(images, originals, metas)
+        ]

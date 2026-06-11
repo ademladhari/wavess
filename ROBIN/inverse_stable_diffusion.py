@@ -3,7 +3,10 @@ from typing import Callable, List, Optional, Union, Tuple
 import time
 
 import torch
-from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
+try:
+    from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
+except ImportError:  # transformers >= 4.40
+    from transformers import CLIPImageProcessor as CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
 
 from diffusers.models import AutoencoderKL, UNet2DConditionModel
 # from diffusers import StableDiffusionPipeline
@@ -41,22 +44,28 @@ class InversableStableDiffusionPipeline(ROBINStableDiffusionPipeline):
         scheduler,
         safety_checker=None,
         feature_extractor=None,
+        image_encoder=None,
         requires_safety_checker: bool = False,
     ):
         # diffusers>=0.27 may pass safety_checker=False (bool); must be None or a module.
         if isinstance(safety_checker, bool):
             requires_safety_checker = safety_checker
             safety_checker = None
+        if isinstance(feature_extractor, bool):
+            feature_extractor = None
         if safety_checker is None:
             requires_safety_checker = False
-        super(InversableStableDiffusionPipeline, self).__init__(vae,
-                text_encoder,
-                tokenizer,
-                unet,
-                scheduler,
-                safety_checker,
-                feature_extractor,
-                requires_safety_checker)
+        super(InversableStableDiffusionPipeline, self).__init__(
+            vae=vae,
+            text_encoder=text_encoder,
+            tokenizer=tokenizer,
+            unet=unet,
+            scheduler=scheduler,
+            safety_checker=safety_checker,
+            feature_extractor=feature_extractor,
+            image_encoder=image_encoder,
+            requires_safety_checker=requires_safety_checker,
+        )
 
         self.forward_diffusion = partial(self.backward_diffusion, reverse_process=True)  # let forward_diffusion a fixed parameter and reversed version of backward_diffusion
     

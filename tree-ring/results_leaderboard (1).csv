@@ -1,0 +1,4 @@
+method,attack,rank,Q@0.7P,Q@0.4P,Avg_P,Avg_Q
+tree-ring,Regen-VAE,1,-inf,-inf,0.0,0.46865424366578434
+tree-ring,Rinse-2xDiff,2,-inf,-inf,0.0,0.30126390732720687
+tree-ring,Regen-Diff,3,-inf,-inf,0.0,0.23811502645629884

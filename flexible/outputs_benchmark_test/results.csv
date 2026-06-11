@@ -1,0 +1,6 @@
+method,detector,attack,description,n_images,n_bits,PSNR,SSIM,bit_accuracy,AUROC,TPR_at_1pct_FPR,TPR_paper_0.01FPR,paper_tau_bits
+flexible,blind_extractor_decoder,identity,no distortion,2,48,inf,1.0,0.875,1.0,1.0,1.0,33
+flexible,blind_extractor_decoder,jpeg_q50,JPEG quality 50,2,48,30.632364396814136,0.8781634468467998,0.8854166865348816,1.0,1.0,1.0,33
+flexible,blind_extractor_decoder,crop,center crop 85% then resize back,2,48,13.415405655655382,0.318111902664057,0.4791666567325592,0.09999999999999998,0.0,0.0,33
+flexible,blind_extractor_decoder,gaussian,additive Gaussian noise sigma=25/255,2,48,20.532283939529734,0.3421002707519252,0.8125,1.0,1.0,1.0,33
+flexible,blind_extractor_decoder,combined,crop 85% -> JPEG Q50 -> Gaussian sigma=15/255,2,48,13.127164865953768,0.11446157625133518,0.4375,0.04999999999999999,0.0,0.0,33

@@ -1,0 +1,372 @@
+#!/usr/bin/env python3
+"""
+Standalone DWT-DCT-SVD benchmark using dwt-dct-svd/dwt_dct_svd.py.
+
+Non-blind embedding (§3.2–3.3): signature → biometric TW → RGB cover.
+
+Metrics per attack:
+  - PSNR (host vs watermarked+attacked)
+  - Bit accuracy (binarized signature pixels)
+  - AUROC, TPR @ 1% FPR (score = (NCC + 1) / 2 on extracted signature)
+
+Attacks: benchmark_attacks.py (14 WAVES attacks, unchanged).
+
+Example:
+  D:\\waves\\.venv\\Scripts\\python.exe benchmark ^
+      --images "D:\\new method\\data\\coco100k\\val" ^
+      --n-images 100 ^
+      --output outputs_benchmark
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+from PIL import Image
+from skimage import color
+from skimage.transform import resize
+from sklearn import metrics as sk_metrics
+from tqdm.auto import tqdm
+
+REPO_ROOT = Path(__file__).resolve().parent
+WAVES_ROOT = REPO_ROOT.parent
+if str(WAVES_ROOT) not in sys.path:
+    sys.path.insert(0, str(WAVES_ROOT))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from benchmark_attacks import ATTACKS, apply_attack_rgb  # noqa: E402
+from dwt_dct_svd import (  # noqa: E402
+    WatermarkState,
+    embed_signature_in_biometric,
+    embed_tw_in_cover,
+    extract_signature_from_tw,
+    extract_tw_from_watermarked,
+    ncc,
+    psnr_channelwise,
+    to_float01,
+)
+
+_IMG_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+
+
+def list_images(root: Path, n: int) -> list[Path]:
+    paths = sorted(p for p in root.iterdir() if p.is_file() and p.suffix.lower() in _IMG_EXTS)
+    if len(paths) < n:
+        raise FileNotFoundError(f"Need {n} images in {root}, found {len(paths)}")
+    return paths[:n]
+
+
+def load_rgb(path: Path, size: int) -> np.ndarray:
+    with Image.open(path) as im:
+        im = im.convert("RGB")
+        w, h = im.size
+        side = min(w, h)
+        left, top = (w - side) // 2, (h - side) // 2
+        im = im.crop((left, top, left + side, top + side))
+        if im.size != (size, size):
+            im = im.resize((size, size), Image.Resampling.LANCZOS)
+        return np.asarray(im, dtype=np.uint8)
+
+
+def _find_image(directory: Path, stem: str) -> Path | None:
+    for ext in (".png", ".jpg", ".jpeg", ".webp", ".bmp"):
+        p = directory / f"{stem}{ext}"
+        if p.is_file():
+            return p
+    return None
+
+
+def load_biometric(path: Path | None, bio_size: int, root: Path) -> np.ndarray:
+    if path is not None and path.is_file():
+        src = path
+    else:
+        src = _find_image(root, "fingerprint") or _find_image(root, "picture")
+        if src is None:
+            raise FileNotFoundError(
+                f"No biometric image in {root} (fingerprint.* or picture.*) and --biometric not set"
+            )
+    with Image.open(src) as im:
+        arr = np.asarray(im.convert("RGB"), dtype=np.uint8)
+    gray = color.rgb2gray(to_float01(arr))
+    return resize(gray, (bio_size, bio_size), anti_aliasing=True).astype(np.float64)
+
+
+def load_signature(
+    path: Path | None,
+    sig_size: int,
+    root: Path,
+    *,
+    sig_seed: int,
+) -> np.ndarray:
+    if path is not None and path.is_file():
+        with Image.open(path) as im:
+            arr = np.asarray(im.convert("RGB"), dtype=np.uint8)
+        gray = color.rgb2gray(to_float01(arr))
+        return resize(gray, (sig_size, sig_size), anti_aliasing=True).astype(np.float64)
+    logo = _find_image(root, "logo")
+    if logo is not None:
+        with Image.open(logo) as im:
+            arr = np.asarray(im.convert("RGB"), dtype=np.uint8)
+        gray = color.rgb2gray(to_float01(arr))
+        return resize(gray, (sig_size, sig_size), anti_aliasing=True).astype(np.float64)
+    rng = np.random.default_rng(sig_seed)
+    bits = rng.integers(0, 2, size=(sig_size, sig_size), dtype=np.uint8)
+    return bits.astype(np.float64)
+
+
+def float01_to_pil_rgb(img: np.ndarray) -> Image.Image:
+    u8 = np.clip(np.rint(to_float01(img) * 255.0), 0, 255).astype(np.uint8)
+    if u8.ndim == 2:
+        u8 = np.stack([u8, u8, u8], axis=-1)
+    return Image.fromarray(u8, mode="RGB")
+
+
+def pil_to_float01_rgb(im: Image.Image) -> np.ndarray:
+    return to_float01(np.asarray(im.convert("RGB"), dtype=np.uint8))
+
+
+def signature_bits(sig: np.ndarray) -> np.ndarray:
+    return (to_float01(sig).ravel() >= 0.5).astype(np.uint8)
+
+
+def bit_accuracy(sig_ref: np.ndarray, sig_hat: np.ndarray) -> float:
+    ref = signature_bits(sig_ref)
+    pred = signature_bits(sig_hat)
+    n = min(ref.size, pred.size)
+    return float(np.mean(ref[:n] == pred[:n]))
+
+
+def extract_and_score(
+    cover: np.ndarray,
+    attacked: np.ndarray,
+    biometric: np.ndarray,
+    signature: np.ndarray,
+    *,
+    alpha: float,
+    beta: float,
+    state: WatermarkState,
+) -> tuple[float, float, np.ndarray]:
+    wm = to_float01(attacked)
+    cov = to_float01(cover)
+    tw_hat = extract_tw_from_watermarked(wm, cov, beta, state)
+    sig_hat = extract_signature_from_tw(tw_hat, biometric, alpha, state)
+    ncc_val = float(ncc(signature, sig_hat))
+    score = float(np.clip((ncc_val + 1.0) * 0.5, 0.0, 1.0))
+    return score, bit_accuracy(signature, sig_hat), sig_hat
+
+
+def psnr_host_vs_attacked(host: np.ndarray, attacked_pil: Image.Image) -> float:
+    host_f = to_float01(host)
+    atk_f = pil_to_float01_rgb(attacked_pil)
+    mean_psnr, _ = psnr_channelwise(host_f, atk_f)
+    return float(mean_psnr)
+
+
+def auroc_tpr(pos: np.ndarray, neg: np.ndarray, fpr_target: float = 0.01) -> tuple[float, float]:
+    y_true = np.concatenate([np.zeros(neg.size, dtype=np.int32), np.ones(pos.size, dtype=np.int32)])
+    y_score = np.concatenate([neg, pos])
+    auroc = float(sk_metrics.roc_auc_score(y_true, y_score))
+    fpr, tpr, _ = sk_metrics.roc_curve(y_true, y_score, pos_label=1)
+    below = np.where(fpr <= fpr_target)[0]
+    tpr1 = float(tpr[below[-1]]) if below.size else float(tpr[0])
+    return auroc, tpr1
+
+
+def embed_cover(
+    cover_u8: np.ndarray,
+    biometric: np.ndarray,
+    signature: np.ndarray,
+    *,
+    alpha: float,
+    beta: float,
+) -> tuple[np.ndarray, Image.Image, WatermarkState]:
+    cover = to_float01(cover_u8)
+    tw, state = embed_signature_in_biometric(biometric, signature, alpha)
+    wm, state = embed_tw_in_cover(cover, tw, beta, state=state)
+    wm_u8 = np.clip(np.rint(wm * 255.0), 0, 255).astype(np.uint8)
+    return cover_u8, float01_to_pil_rgb(wm_u8), state
+
+
+def run(
+    images_dir: Path,
+    output_dir: Path,
+    *,
+    n_images: int,
+    image_size: int,
+    alpha: float,
+    beta: float,
+    bio_size: int,
+    sig_size: int,
+    biometric_path: Path | None,
+    signature_path: Path | None,
+    sig_seed: int,
+) -> list[dict]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    biometric = load_biometric(biometric_path, bio_size, REPO_ROOT)
+    signature = load_signature(signature_path, sig_size, REPO_ROOT, sig_seed=sig_seed)
+    paths = list_images(images_dir, n_images)
+
+    records: list[dict] = []
+    print(
+        f"Embedding {len(paths)} images "
+        f"(cover={image_size}, bio={bio_size}, sig={sig_size}, α={alpha}, β={beta})…",
+        flush=True,
+    )
+    for path in tqdm(paths, desc="embed", unit="img"):
+        cover_u8 = load_rgb(path, image_size)
+        host_u8, wm_pil, state = embed_cover(
+            cover_u8, biometric, signature, alpha=alpha, beta=beta
+        )
+        records.append(
+            {
+                "path": str(path),
+                "host_u8": host_u8,
+                "wm_pil": wm_pil,
+                "state": state,
+            }
+        )
+
+    # Sanity on first image (identity, no attack).
+    s0, ba0, _ = extract_and_score(
+        records[0]["host_u8"],
+        pil_to_float01_rgb(records[0]["wm_pil"]),
+        biometric,
+        signature,
+        alpha=alpha,
+        beta=beta,
+        state=records[0]["state"],
+    )
+    print(
+        f"Sanity (image 0, no attack): NCC_score={s0:.3f} BitAcc={ba0:.3f}",
+        flush=True,
+    )
+
+    neg_scores = np.asarray(
+        [
+            extract_and_score(
+                rec["host_u8"],
+                to_float01(rec["host_u8"]),
+                biometric,
+                signature,
+                alpha=alpha,
+                beta=beta,
+                state=rec["state"],
+            )[0]
+            for rec in tqdm(records, desc="detect/negatives", unit="img")
+        ],
+        dtype=np.float64,
+    )
+
+    rows_out: list[dict] = []
+    for spec in ATTACKS:
+        psnr_vals: list[float] = []
+        bit_vals: list[float] = []
+        pos_scores: list[float] = []
+
+        for i, rec in enumerate(tqdm(records, desc=f"dwt-dct-svd/{spec.name}", unit="img")):
+            attacked_pil = apply_attack_rgb(spec.name, rec["wm_pil"], seed=i)
+            psnr_vals.append(psnr_host_vs_attacked(rec["host_u8"], attacked_pil))
+            score, ba, _ = extract_and_score(
+                rec["host_u8"],
+                pil_to_float01_rgb(attacked_pil),
+                biometric,
+                signature,
+                alpha=alpha,
+                beta=beta,
+                state=rec["state"],
+            )
+            bit_vals.append(ba)
+            pos_scores.append(score)
+
+        pos_arr = np.asarray(pos_scores, dtype=np.float64)
+        auroc, tpr1 = auroc_tpr(pos_arr, neg_scores)
+
+        row = {
+            "method": "dwt-dct-svd",
+            "detector": "non_blind_ncc_signature",
+            "attack": spec.name,
+            "description": spec.description,
+            "n_images": len(records),
+            "PSNR": float(np.mean(psnr_vals)),
+            "bit_accuracy": float(np.mean(bit_vals)),
+            "AUROC": auroc,
+            "TPR_at_1pct_FPR": tpr1,
+        }
+        rows_out.append(row)
+        print(
+            f"  {spec.name}: PSNR={row['PSNR']:.2f} "
+            f"BitAcc={row['bit_accuracy']:.3f} AUROC={row['AUROC']:.3f} "
+            f"TPR@1%FPR={row['TPR_at_1pct_FPR']:.3f}",
+            flush=True,
+        )
+
+    csv_path = output_dir / "results.csv"
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows_out[0].keys()))
+        w.writeheader()
+        w.writerows(rows_out)
+
+    summary = {
+        "method": "dwt-dct-svd",
+        "implementation": "dwt-dct-svd/dwt_dct_svd.py",
+        "detector": "non-blind extract_tw + extract_signature + NCC",
+        "images_dir": str(images_dir),
+        "n_images": len(records),
+        "image_size": image_size,
+        "bio_size": bio_size,
+        "sig_size": sig_size,
+        "alpha": alpha,
+        "beta": beta,
+        "sig_seed": sig_seed,
+        "sanity_identity": {"ncc_score": s0, "bit_accuracy": ba0},
+        "attacks": rows_out,
+    }
+    with open(output_dir / "results.json", "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2)
+
+    print(f"\nWrote {csv_path}", flush=True)
+    return rows_out
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="DWT-DCT-SVD standalone benchmark (WAVES attacks)")
+    p.add_argument(
+        "--images",
+        type=Path,
+        default=Path(r"D:\new method\data\coco100k\val"),
+    )
+    p.add_argument("--output", type=Path, default=REPO_ROOT / "outputs_benchmark")
+    p.add_argument("--n-images", type=int, default=100)
+    p.add_argument("--image-size", type=int, default=512)
+    p.add_argument("--alpha", type=float, default=0.05, help="signature embed strength α")
+    p.add_argument("--beta", type=float, default=0.02, help="TW embed strength β")
+    p.add_argument("--bio-size", type=int, default=256)
+    p.add_argument("--sig-size", type=int, default=128)
+    p.add_argument("--biometric", type=Path, default=None, help="biometric image (default: fingerprint.* / picture.*)")
+    p.add_argument("--signature", type=Path, default=None, help="signature image (default: logo.png or random bits)")
+    p.add_argument("--sig-seed", type=int, default=777, help="random signature seed if no --signature/logo")
+    args = p.parse_args()
+
+    run(
+        args.images,
+        args.output,
+        n_images=args.n_images,
+        image_size=args.image_size,
+        alpha=args.alpha,
+        beta=args.beta,
+        bio_size=args.bio_size,
+        sig_size=args.sig_size,
+        biometric_path=args.biometric,
+        signature_path=args.signature,
+        sig_seed=args.sig_seed,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

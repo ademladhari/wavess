@@ -18,6 +18,22 @@ METRIC_KEYS: tuple[str, ...] = (
     "artifacts",
 )
 
+# Pixel-pair metrics (vs host originals) — not meaningful for generation-based watermarks.
+PIXEL_PAIR_METRIC_KEYS: tuple[str, ...] = ("PSNR", "SSIM", "NMI", "LPIPS")
+
+# Distribution / perceptual quality still reported for generative methods (WAVES-style).
+GENERATIVE_QUALITY_METRIC_KEYS: tuple[str, ...] = (
+    "FID",
+    "CLIP_FID",
+    "aesthetics_delta",
+    "artifacts",
+)
+
+# Methods that synthesize watermarked images instead of editing host pixels in place.
+GENERATION_BASED_METHODS: frozenset[str] = frozenset(
+    {"flexible", "flex", "tree-ring", "tree_ring", "treering", "robin"}
+)
+
 # invert=True for PSNR, SSIM, NMI (higher raw = better fidelity)
 INVERT_METRICS: dict[str, bool] = {
     "PSNR": True,
@@ -95,6 +111,32 @@ def normalize_row(raw_row: dict[str, float], anchors: dict[str, tuple[float, flo
 
 def q_from_raw_row(raw_row: dict[str, float], anchors: dict[str, tuple[float, float]]) -> float:
     return compute_Q(normalize_row(raw_row, anchors))
+
+
+def normalize_generative_row(
+    raw_row: dict[str, float], anchors: dict[str, tuple[float, float]]
+) -> dict[str, float]:
+    out: dict[str, float] = {}
+    for k in GENERATIVE_QUALITY_METRIC_KEYS:
+        if k not in raw_row:
+            continue
+        p10, p90 = anchors.get(k, (0.0, 1.0))
+        out[k] = normalize_metric(float(raw_row[k]), p10, p90, INVERT_METRICS.get(k, False))
+    return out
+
+
+def q_generative_from_raw_row(
+    raw_row: dict[str, float], anchors: dict[str, tuple[float, float]]
+) -> float:
+    """Q using only FID / CLIP-FID / aesthetics / artifacts (no PSNR, SSIM, NMI, LPIPS)."""
+    normed = normalize_generative_row(raw_row, anchors)
+    if not normed:
+        return float("nan")
+    return float(sum(normed.values()) / len(normed))
+
+
+def is_generation_based_method(method: str) -> bool:
+    return method.strip().lower() in GENERATION_BASED_METHODS
 
 
 def interp_q_at_p(

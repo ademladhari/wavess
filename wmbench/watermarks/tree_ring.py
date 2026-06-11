@@ -37,6 +37,18 @@ def _to_score_from_pvalue(p_value: float) -> float:
     return float(np.clip(1.0 - float(p_value), 0.0, 1.0))
 
 
+def _tree_ring_detect_image_size() -> int:
+    return max(8, int(os.environ.get("WMBENCH_TREE_RING_IMAGE_SIZE", "512") or "512"))
+
+
+def _prepare_tree_ring_image(image: Image.Image) -> Image.Image:
+    size = _tree_ring_detect_image_size()
+    im = image.convert("RGB")
+    if im.size != (size, size):
+        im = im.resize((size, size), Image.LANCZOS)
+    return im
+
+
 class TreeRingAdapter(WatermarkAdapter):
     """
     Adapter for Tree-Ring watermarking using the project under tree-ring/src/treering.
@@ -158,6 +170,26 @@ class TreeRingAdapter(WatermarkAdapter):
         del image  # Tree-Ring embedding is generation-time latent injection.
         return self._generate_one()
 
+    def _invert_and_score(self, images: list[Image.Image]) -> list[float]:
+        if not images:
+            return []
+        prepared = [_prepare_tree_ring_image(im) for im in images]
+        inverter = self._ensure_inverter()
+        inverted = inverter.invert(
+            images=prepared,
+            invert_prompt=self._cfg.detection.invert_prompt,
+            num_inversion_steps=self._cfg.detection.num_inversion_steps,
+        )
+        detections = self._detect_watermark(
+            inverted_latents=inverted,
+            key=self._key,
+            threshold=self._cfg.detection.threshold,
+            alpha=self._cfg.detection.alpha,
+            variance_estimation=self._cfg.detection.variance_estimation,
+            pvalue_tail=self._cfg.detection.pvalue_tail,
+        )
+        return [_to_score_from_pvalue(d.p_value) for d in detections]
+
     def detect(
         self,
         image: Image.Image,
@@ -167,18 +199,15 @@ class TreeRingAdapter(WatermarkAdapter):
         blind: bool = False,
     ) -> float:
         del original, meta, blind
-        inverter = self._ensure_inverter()
-        inverted = inverter.invert(
-            images=[image.convert("RGB")],
-            invert_prompt=self._cfg.detection.invert_prompt,
-            num_inversion_steps=self._cfg.detection.num_inversion_steps,
-        )
-        detection = self._detect_watermark(
-            inverted_latents=inverted,
-            key=self._key,
-            threshold=self._cfg.detection.threshold,
-            alpha=self._cfg.detection.alpha,
-            variance_estimation=self._cfg.detection.variance_estimation,
-            pvalue_tail=self._cfg.detection.pvalue_tail,
-        )[0]
-        return _to_score_from_pvalue(detection.p_value)
+        return self._invert_and_score([image])[0]
+
+    def detect_batch(
+        self,
+        images: list[Image.Image],
+        originals: list[Image.Image | None] | None = None,
+        *,
+        metas: list[dict | None] | None = None,
+        blind: bool = False,
+    ) -> list[float]:
+        del originals, metas, blind
+        return self._invert_and_score(images)

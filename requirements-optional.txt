@@ -1,0 +1,8 @@
+# Optional — only needed for Regen-VAE attack (regeneration in benchmark_simple).
+#
+# On Windows there is NO prebuilt compressai wheel; pip tries to compile C++ and needs:
+#   Visual Studio Build Tools + "Desktop development with C++" + Windows 10/11 SDK
+# If build fails with "Cannot open include file: io.h", skip this and use:
+#   benchmark_simple.py --skip-regen
+#
+compressai

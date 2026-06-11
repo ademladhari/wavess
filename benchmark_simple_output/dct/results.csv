@@ -1,0 +1,6 @@
+method,attack,description,n_images,generation_based,blind_detect,PSNR,SSIM,bit_accuracy,AUROC,TPR_at_1pct_FPR
+dct,identity,no distortion,100,False,False,23.199046681024107,0.9066433292246984,0.9755300000000001,1.0,1.0
+dct,jpeg_q50,JPEG quality 50,100,False,False,22.500843054174883,0.8465426736234071,0.9373600000000001,1.0,1.0
+dct,crop,center crop 85% then resize back,100,False,False,12.700563663018531,0.3129602079472697,0.50137,0.85,0.85
+dct,gaussian,additive Gaussian noise sigma=25,100,False,False,18.048629621707533,0.33547026821176595,0.7915300000000001,1.0,1.0
+dct,combined,crop 85% -> JPEG Q50 -> Gaussian noise sigma=15,100,False,False,12.444243652726708,0.11167029620524765,0.5010499999999999,0.86,0.86

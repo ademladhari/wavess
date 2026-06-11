@@ -36,3 +36,5 @@ einops>=0.8.0
 tensorboard>=2.17.0
 matplotlib>=3.8.0
 pyyaml>=6.0.0
+scikit-learn
+scikit-image

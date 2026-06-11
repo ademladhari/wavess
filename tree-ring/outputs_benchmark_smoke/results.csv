@@ -1,0 +1,15 @@
+method,detector,attack,description,n_images,PSNR,SSIM,bit_accuracy,AUROC,TPR_at_1pct_FPR
+tree-ring,ddim_invert_pvalue,identity,no distortion,2,inf,1.0,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,rotation,rotate 22.5 deg (wmbench rel=0.5),2,15.121260853740448,0.4889892979380015,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,resized_crop,"random resized crop scale 0.75, square",2,22.97918431415466,0.641731622176317,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,erasing,random erasing 12.5% area,2,16.9499129725749,0.864221198105263,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,brightness,brightness factor 1.5,2,13.537531440344502,0.8890324140034666,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,contrast,contrast factor 1.5,2,23.42106781425676,0.915765850563963,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,blur,Gaussian blur radius 4 px,2,30.221169047102023,0.7479676593735438,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,resize_90,resize to 90% then back,2,38.498840898149126,0.9441519558075573,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,jpeg_q50,JPEG quality 50,2,34.61513746415093,0.8427258194445321,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,crop,center crop 85% then resize back,2,24.78578230889573,0.6082178469568487,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,gaussian,additive Gaussian noise sigma=25 (0-255 scale),2,20.229302995212024,0.17145003733783995,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,combo_geometric,rotation 22.5 -> resized_crop 0.75,2,16.994995148283685,0.593228565921049,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,combo_photometric,brightness 1.5 -> contrast 1.5,2,12.816024260791522,0.7805582877630421,nan,1.0,1.0
+tree-ring,ddim_invert_pvalue,combined,crop 85% -> JPEG Q50 -> Gaussian sigma=15,2,21.77601343837429,0.18014296578811018,nan,1.0,1.0

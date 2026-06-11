@@ -5,6 +5,10 @@ import torch
 
 def fft2_shifted(latents: torch.Tensor) -> torch.Tensor:
     """Return 2D FFT with centered frequencies."""
+    # cuFFT half/complex-half requires power-of-2 sizes; fp32 FFT works for any latent shape.
+    if latents.is_cuda and latents.dtype in (torch.float16, torch.bfloat16):
+        x = latents.float()
+        return torch.fft.fftshift(torch.fft.fft2(x, dim=(-2, -1)), dim=(-2, -1))
     return torch.fft.fftshift(torch.fft.fft2(latents, dim=(-2, -1)), dim=(-2, -1))
 
 

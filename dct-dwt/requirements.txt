@@ -1,0 +1,6 @@
+numpy
+scipy
+pillow
+PyWavelets
+scikit-learn
+tqdm
