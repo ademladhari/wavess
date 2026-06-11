@@ -6,10 +6,11 @@ Generation-based: embeds via WatermarkEncoder + FrozenSDM (or loads pre-generate
 pairs from generate_pairs.py). Detection is blind: WatermarkExtractor + WatermarkDecoder.
 
 Metrics per attack:
-  - PSNR, SSIM (watermarked vs attacked)
-  - Bit accuracy
-  - AUROC, TPR @ 1% FPR (score = mean bit accuracy vs payload)
+  - BER (bit error rate = 1 - bit accuracy)
+  - AUROC, TPR @ 1% FPR (score = per-image bit accuracy vs payload)
   - TPR @ 0.01 FPR (paper bit-count threshold from src.eval.extraction)
+
+No PSNR/SSIM: flexible generates images; there is no cover-vs-watermarked pair.
 
 Attacks: see benchmark_attacks.py (rotation, blur, brightness, JPEG, crop, etc.)
 
@@ -31,7 +32,6 @@ from pathlib import Path
 import numpy as np
 import torch
 from PIL import Image
-from skimage.metrics import peak_signal_noise_ratio, structural_similarity
 from sklearn import metrics
 from tqdm.auto import tqdm
 
@@ -81,18 +81,6 @@ def load_clean_tensor(path: Path, size: int) -> torch.Tensor:
         if im.size != (size, size):
             im = im.resize((size, size), Image.Resampling.LANCZOS)
         return pil_to_tensor(im)
-
-
-def psnr_ssim_tensors(ref: torch.Tensor, cand: torch.Tensor) -> tuple[float, float]:
-    a = tensor_to_pil(ref)
-    b = tensor_to_pil(cand)
-    if b.size != a.size:
-        b = b.resize(a.size, Image.Resampling.BICUBIC)
-    a_np = np.asarray(a, dtype=np.float64)
-    b_np = np.asarray(b, dtype=np.float64)
-    psnr = float(peak_signal_noise_ratio(a_np, b_np, data_range=255.0))
-    ssim = float(structural_similarity(a_np, b_np, channel_axis=2, data_range=255.0))
-    return psnr, ssim
 
 
 def detection_auroc_and_tpr(
@@ -311,8 +299,6 @@ def run(
 
     rows_out: list[dict] = []
     for spec in ATTACKS:
-        psnr_vals: list[float] = []
-        ssim_vals: list[float] = []
         wd_list: list[torch.Tensor] = []
         w_list: list[torch.Tensor] = []
         pos_scores: list[float] = []
@@ -321,9 +307,6 @@ def run(
             wm = rec["image"]
             w = rec["w"]
             attacked = apply_attack_tensor(spec.name, wm, seed=i)
-            p, s = psnr_ssim_tensors(wm, attacked)
-            psnr_vals.append(p)
-            ssim_vals.append(s)
 
             wd = decode_watermark(ext, dec, attacked, device)
             wd_list.append(wd.unsqueeze(0))
@@ -333,6 +316,7 @@ def run(
         wd_all = torch.cat(wd_list, dim=0)
         w_all = torch.cat(w_list, dim=0)
         bit_acc = float(bit_accuracy(wd_all, w_all))
+        ber = 1.0 - bit_acc
         tpr_paper, tau = tpr_at_fpr(wd_all, w_all, fpr=0.01)
         pos_arr = np.asarray(pos_scores, dtype=np.float64)
         auroc, tpr1 = detection_auroc_and_tpr(pos_arr, neg_arr)
@@ -344,8 +328,7 @@ def run(
             "description": spec.description,
             "n_images": len(records),
             "n_bits": n_bits,
-            "PSNR": float(np.mean(psnr_vals)),
-            "SSIM": float(np.mean(ssim_vals)),
+            "BER": ber,
             "bit_accuracy": bit_acc,
             "AUROC": auroc,
             "TPR_at_1pct_FPR": tpr1,
@@ -354,8 +337,8 @@ def run(
         }
         rows_out.append(row)
         print(
-            f"  {spec.name}: PSNR={row['PSNR']:.2f} SSIM={row['SSIM']:.3f} "
-            f"BitAcc={row['bit_accuracy']:.3f} AUROC={row['AUROC']:.3f} "
+            f"  {spec.name}: BER={100 * ber:.1f}% "
+            f"AUROC={row['AUROC']:.3f} "
             f"TPR@1%FPR={row['TPR_at_1pct_FPR']:.3f} "
             f"TPR_paper={row['TPR_paper_0.01FPR']:.3f}",
             flush=True,
