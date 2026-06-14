@@ -1,0 +1,15 @@
+method,detector,attack,description,n_images,bit_accuracy,BER_pct,AUROC,TPR_at_1pct_FPR
+dct-dwt,blind_pn_rho,identity,no distortion,100,0.841796875,15.8203125,1.0,1.0
+dct-dwt,blind_pn_rho,rotation,rotate 22.5 deg (wmbench rel=0.5),100,0.49728515625,50.271484375,0.8144,0.01
+dct-dwt,blind_pn_rho,resized_crop,"random resized crop scale 0.75, square",100,0.503291015625,49.6708984375,0.54775,0.0
+dct-dwt,blind_pn_rho,erasing,random erasing 12.5% area,100,0.805654296875,19.4345703125,1.0,1.0
+dct-dwt,blind_pn_rho,brightness,brightness factor 1.5,100,0.768515625,23.148437499999996,1.0,1.0
+dct-dwt,blind_pn_rho,contrast,contrast factor 1.5,100,0.778232421875,22.176757812500004,0.9998,0.99
+dct-dwt,blind_pn_rho,blur,Gaussian blur radius 4 px,100,0.496669921875,50.33300781250001,0.46515000000000006,0.0
+dct-dwt,blind_pn_rho,resize_90,resize to 90% then back,100,0.82203125,17.796875,1.0,1.0
+dct-dwt,blind_pn_rho,jpeg_q50,JPEG quality 50,100,0.510302734375,48.96972656250001,0.8686499999999999,0.32
+dct-dwt,blind_pn_rho,crop,center crop 85% then resize back,100,0.50322265625,49.67773437500001,0.6083000000000001,0.0
+dct-dwt,blind_pn_rho,gaussian,additive Gaussian noise sigma=25 (0-255 scale),100,0.59716796875,40.283203125,0.9998,0.99
+dct-dwt,blind_pn_rho,combo_geometric,rotation 22.5 -> resized_crop 0.75,100,0.5006640625,49.93359375000001,0.6157,0.0
+dct-dwt,blind_pn_rho,combo_photometric,brightness 1.5 -> contrast 1.5,100,0.7102734375,28.972656249999996,1.0,1.0
+dct-dwt,blind_pn_rho,combined,crop 85% -> JPEG Q50 -> Gaussian sigma=15,100,0.499873046875,50.0126953125,0.4819,0.0

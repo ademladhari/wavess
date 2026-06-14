@@ -1,15 +1,15 @@
-method,detector,attack,description,n_images,PSNR,SSIM,bit_accuracy,AUROC,TPR_at_1pct_FPR
-robin,ddim_invert_fft_l1,identity,no distortion,2,inf,1.0,nan,1.0,1.0
-robin,ddim_invert_fft_l1,rotation,rotate 22.5 deg (wmbench rel=0.5),2,11.432725906943237,0.18838171341501042,nan,1.0,1.0
-robin,ddim_invert_fft_l1,resized_crop,"random resized crop scale 0.75, square",2,14.276210779935585,0.2678010576728192,nan,1.0,1.0
-robin,ddim_invert_fft_l1,erasing,random erasing 12.5% area,2,14.754197341125186,0.8652198807562628,nan,1.0,1.0
-robin,ddim_invert_fft_l1,brightness,brightness factor 1.5,2,13.572595431159549,0.8582114947810175,nan,1.0,1.0
-robin,ddim_invert_fft_l1,contrast,contrast factor 1.5,2,22.000198639549446,0.8676790840522857,nan,1.0,1.0
-robin,ddim_invert_fft_l1,blur,Gaussian blur radius 4 px,2,21.94666858363517,0.5250822645292612,nan,1.0,1.0
-robin,ddim_invert_fft_l1,resize_90,resize to 90% then back,2,36.12876842927687,0.97118652078982,nan,1.0,1.0
-robin,ddim_invert_fft_l1,jpeg_q50,JPEG quality 50,2,30.982984786171436,0.8776311496463212,nan,1.0,1.0
-robin,ddim_invert_fft_l1,crop,center crop 85% then resize back,2,14.346537172209652,0.25130770348161857,nan,1.0,1.0
-robin,ddim_invert_fft_l1,gaussian,additive Gaussian noise sigma=25 (0-255 scale),2,20.30356194914772,0.3847418699815043,nan,1.0,1.0
-robin,ddim_invert_fft_l1,combo_geometric,rotation 22.5 -> resized_crop 0.75,2,12.24889721740442,0.22571658843811185,nan,1.0,1.0
-robin,ddim_invert_fft_l1,combo_photometric,brightness 1.5 -> contrast 1.5,2,12.997811034705991,0.7078899096709679,nan,1.0,1.0
-robin,ddim_invert_fft_l1,combined,crop 85% -> JPEG Q50 -> Gaussian sigma=15,2,13.954866014668896,0.10578239517566591,nan,0.25,0.0
+method,detector,attack,description,n_images,mean_wm_distance,mean_clean_distance,distance_gap,PSNR,SSIM,bit_accuracy,AUROC,TPR_at_1pct_FPR
+robin,ddim_invert_fft_l1,identity,no distortion,2,34.686195373535156,65.73950576782227,31.05331039428711,inf,1.0,nan,1.0,1.0
+robin,ddim_invert_fft_l1,rotation,rotate 22.5 deg (wmbench rel=0.5),2,62.418283462524414,65.73950576782227,3.3212223052978516,11.774276773727689,0.37430769366018385,nan,1.0,1.0
+robin,ddim_invert_fft_l1,resized_crop,"random resized crop scale 0.75, square",2,62.250030517578125,65.73950576782227,3.4894752502441406,14.517249000551159,0.47625635526022325,nan,1.0,1.0
+robin,ddim_invert_fft_l1,erasing,random erasing 12.5% area,2,37.38973617553711,65.73950576782227,28.349769592285156,13.869953381675927,0.8652815529604435,nan,1.0,1.0
+robin,ddim_invert_fft_l1,brightness,brightness factor 1.5,2,38.241376876831055,65.73950576782227,27.49812889099121,14.636928243843961,0.8686660960730674,nan,1.0,1.0
+robin,ddim_invert_fft_l1,contrast,contrast factor 1.5,2,37.23484230041504,65.73950576782227,28.504663467407227,20.605417018960388,0.7977515141523881,nan,1.0,1.0
+robin,ddim_invert_fft_l1,blur,Gaussian blur radius 4 px,2,53.16292953491211,65.73950576782227,12.576576232910156,25.6227829329224,0.7332431884083854,nan,1.0,1.0
+robin,ddim_invert_fft_l1,resize_90,resize to 90% then back,2,35.317317962646484,65.73950576782227,30.42218780517578,43.15293738357997,0.9865931060558946,nan,1.0,1.0
+robin,ddim_invert_fft_l1,jpeg_q50,JPEG quality 50,2,46.87055206298828,65.73950576782227,18.868953704833984,33.99370791611506,0.9001518185735125,nan,1.0,1.0
+robin,ddim_invert_fft_l1,crop,center crop 85% then resize back,2,63.776737213134766,65.73950576782227,1.9627685546875,16.45679892362631,0.514222798216384,nan,0.75,0.5
+robin,ddim_invert_fft_l1,gaussian,additive Gaussian noise sigma=25 (0-255 scale),2,55.02855110168457,65.73950576782227,10.710954666137695,20.52892680583004,0.24649602438886392,nan,1.0,1.0
+robin,ddim_invert_fft_l1,combo_geometric,rotation 22.5 -> resized_crop 0.75,2,62.74411201477051,65.73950576782227,2.995393753051758,11.87436467536507,0.4249629560916708,nan,1.0,1.0
+robin,ddim_invert_fft_l1,combo_photometric,brightness 1.5 -> contrast 1.5,2,40.73878288269043,65.73950576782227,25.000722885131836,13.972937842010971,0.7039183966935594,nan,1.0,1.0
+robin,ddim_invert_fft_l1,combined,crop 85% -> JPEG Q50 -> Gaussian sigma=15,2,67.10555648803711,65.73950576782227,-1.3660507202148438,15.904713686857457,0.16402265650324818,nan,0.25,0.0

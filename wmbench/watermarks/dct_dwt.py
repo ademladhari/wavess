@@ -130,7 +130,8 @@ class DCTDWTAdapter(WatermarkAdapter):
         self._seed = int(seed if seed is not None else self._impl.SEED)
         self._wavelet = str(wavelet if wavelet is not None else self._impl.WAVELET)
         self._subband_choice = str(subband_choice if subband_choice is not None else self._impl.SUBBAND_CHOICE)
-        self._pn_mode = str(pn_mode if pn_mode is not None else self._impl.PN_MODE)
+        # Notebook PN_MODE is often independent_rademacher (spurious ~50% bit acc / constant rho).
+        self._pn_mode = str(pn_mode if pn_mode is not None else "orthogonal_normal")
         self._mid_pos = [tuple(x) for x in self._impl.MID_POS]
 
         self._wm_img_path = os.path.join(self._scratch.name, "wm_bits_seeded.png")
